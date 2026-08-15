@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand palette — AKON LANGGA */
+    --background: 36 47% 99%;          /* #FFFDFB website background */
+    --foreground: 0 0% 18%;            /* #2D2D2D primary text */
+
+    --surface: 343 71% 97%;            /* #FFF5F7 soft blush pink */
+    --surface-foreground: 0 0% 18%;
+
+    --card: 0 0% 100%;                 /* #FFFFFF cards */
+    --card-foreground: 0 0% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 18%;
+
+    --primary: 337 64% 33%;             /* #8B1E3F deep burgundy */
+    --primary-foreground: 343 71% 97%;
+
+    --secondary: 337 48% 67%;          /* #D97A9A rose pink */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 343 41% 94%;
+    --muted-foreground: 0 0% 40%;      /* #666666 secondary text */
+
+    --accent: 337 48% 67%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 142 52% 50%;            /* #4CAF50 */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;             /* #F59E0B */
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 73% 51%;          /* #DC2626 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 343 30% 90%;
+    --input: 343 30% 88%;
+    --ring: 337 64% 33%;
+
+    --chart-1: 337 64% 33%;
+    --chart-2: 337 48% 67%;
+    --chart-3: 142 52% 50%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 73% 51%;
+
+    --radius: 0.75rem;
+
+    --font-heading: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.15);
+    color: hsl(var(--primary));
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+  }
+}
