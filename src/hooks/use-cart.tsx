@@ -27,14 +27,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   const ensureGuestSession = useCallback(async (): Promise<string | null> => {
-    const stored = localStorage.getItem(GUEST_CART_KEY);
-    if (stored) return stored;
+    // Migrate from localStorage to sessionStorage if needed
+    const oldStored = localStorage.getItem(GUEST_CART_KEY);
+    const stored = sessionStorage.getItem(GUEST_CART_KEY) || oldStored;
+    if (stored) {
+      if (oldStored) {
+        sessionStorage.setItem(GUEST_CART_KEY, oldStored);
+        localStorage.removeItem(GUEST_CART_KEY);
+      }
+      return stored;
+    }
 
     const { data, error } = await supabase.rpc('create_guest_cart');
     if (error || !data) return null;
 
     const id = data as string;
-    localStorage.setItem(GUEST_CART_KEY, id);
+    sessionStorage.setItem(GUEST_CART_KEY, id);
     return id;
   }, []);
 
