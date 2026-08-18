@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Leaf,
@@ -25,6 +25,7 @@ type AuthMode = 'signin' | 'signup' | 'forgot';
 
 export function AuthPage() {
   const { signIn, signUp } = useAuth();
+  const navigate = useNavigate();
 
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
@@ -130,6 +131,8 @@ export function AuthPage() {
         description:
           'Your account has been created successfully.',
       });
+    } else {
+      navigate('/');
     }
   };
 
