@@ -22,7 +22,7 @@ export function ProductDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
-  const { addToCart } = useCart();
+  const { addToCart, items, updateQuantity } = useCart();
 
   useEffect(() => {
     if (!slug) return;
@@ -68,10 +68,21 @@ export function ProductDetailPage() {
   const handleBuyNow = async () => {
     if (!product) return;
     setAdding(true);
-    const { error } = await addToCart(product.id, quantity);
+
+    const existingItem = items.find((item) => item.product_id === product.id);
+    let error: string | null = null;
+
+    if (existingItem) {
+      const res = await updateQuantity(existingItem.id, quantity);
+      error = res.error;
+    } else {
+      const res = await addToCart(product.id, quantity);
+      error = res.error;
+    }
+
     setAdding(false);
     if (error) {
-      toast({ title: 'Could not add to cart', description: error, variant: 'destructive' });
+      toast({ title: 'Could not prepare cart', description: error, variant: 'destructive' });
     } else {
       navigate('/checkout');
     }
