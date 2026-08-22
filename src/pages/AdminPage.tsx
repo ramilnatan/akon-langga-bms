@@ -799,6 +799,7 @@ function CategoriesTab() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Category | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   const fetchCategories = useCallback(async () => {
@@ -838,7 +839,10 @@ function CategoriesTab() {
         <h2 className="font-heading text-lg font-semibold text-foreground">Categories ({categories.length})</h2>
         <Button
           className="rounded-full shadow-soft"
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setEditing(null);
+            setShowForm(true);
+          }}
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Category
@@ -854,6 +858,7 @@ function CategoriesTab() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Description</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Order</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -867,6 +872,19 @@ function CategoriesTab() {
                       {cat.active ? 'Active' : 'Inactive'}
                     </Badge>
                   </td>
+                  <td className="px-4 py-3">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 rounded-full p-0"
+                      onClick={() => {
+                        setEditing(cat);
+                        setShowForm(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+            </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -876,9 +894,14 @@ function CategoriesTab() {
 
       {showForm && (
         <CategoryForm
-          onClose={() => setShowForm(false)}
+          category={editing}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
           onSaved={() => {
             setShowForm(false);
+            setEditing(null);
             fetchCategories();
           }}
         />
@@ -888,23 +911,25 @@ function CategoriesTab() {
 }
 
 function CategoryForm({
+  category,
   onClose,
   onSaved,
 }: {
+  category: Category | null;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [form, setForm] = useState({
-    name: '',
-    slug: '',
-    description: '',
-    icon: '',
-    color: '',
-    featured: false,
-    display_order: '0',
-    active: true,
-    meta_title: '',
-    meta_description: '',
+    name: category?.name ?? '',
+    slug: category?.slug ?? '',
+    description: category?.description ?? '',
+    icon: category?.icon ?? '',
+    color: category?.color ?? '',
+    featured: category?.featured ?? false,
+    display_order: category?.display_order?.toString() ?? '0',
+    active: category?.active ?? true,
+    meta_title: category?.meta_title ?? '',
+    meta_description: category?.meta_description ?? '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -939,18 +964,21 @@ function CategoryForm({
       active: form.active,
       meta_title: form.meta_title.trim() || null,
       meta_description: form.meta_description.trim() || null,
+      updated_at: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('categories').insert(payload);
+    const result = category
+      ? await supabase.from('categories').update(payload).eq('id', category.id)
+      : await supabase.from('categories').insert({ ...payload, created_at: new Date().toISOString() });
 
     setSaving(false);
 
-    if (error) {
-      toast({ title: 'Could not create category', description: error.message, variant: 'destructive' });
+    if (result.error) {
+      toast({ title: category ? 'Could not update category' : 'Could not create category', description: result.error.message, variant: 'destructive' });
       return;
     }
 
-    toast({ title: 'Category created' });
+    toast({ title: category ? 'Category updated' : 'Category created' });
     onSaved();
   };
 
@@ -958,7 +986,7 @@ function CategoryForm({
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Category</DialogTitle>
+          <DialogTitle>{category ? 'Edit Category' : 'Add Category'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -1011,7 +1039,7 @@ function CategoryForm({
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               {saving ? <LoadingSpinner size="sm" className="mr-2" /> : null}
-              Create Category
+              {category ? 'Save Changes' : 'Create Category'}
             </Button>
           </DialogFooter>
         </form>
@@ -1019,3 +1047,4 @@ function CategoryForm({
     </Dialog>
   );
 }
+
