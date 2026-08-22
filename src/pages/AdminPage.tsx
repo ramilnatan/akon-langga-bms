@@ -799,6 +799,7 @@ function CategoriesTab() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -832,34 +833,189 @@ function CategoriesTab() {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-border bg-surface/50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Description</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Order</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {categories.map((cat) => (
-              <tr key={cat.id} className="transition-colors hover:bg-surface/30">
-                <td className="px-4 py-3 text-sm font-medium text-foreground">{cat.name}</td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">{cat.description || '-'}</td>
-                <td className="px-4 py-3 text-sm text-foreground">{cat.display_order}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={cat.active ? 'default' : 'destructive'} className="text-xs">
-                    {cat.active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-lg font-semibold text-foreground">Categories ({categories.length})</h2>
+        <Button
+          className="rounded-full shadow-soft"
+          onClick={() => setShowForm(true)}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Category
+        </Button>
       </div>
-    </div>
+
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="border-b border-border bg-surface/50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Description</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Order</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {categories.map((cat) => (
+                <tr key={cat.id} className="transition-colors hover:bg-surface/30">
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">{cat.name}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{cat.description || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">{cat.display_order}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant={cat.active ? 'default' : 'destructive'} className="text-xs">
+                      {cat.active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showForm && (
+        <CategoryForm
+          onClose={() => setShowForm(false)}
+          onSaved={() => {
+            setShowForm(false);
+            fetchCategories();
+          }}
+        />
+      )}
+    </>
   );
 }
 
+function CategoryForm({
+  onClose,
+  onSaved,
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    icon: '',
+    color: '',
+    featured: false,
+    display_order: '0',
+    active: true,
+    meta_title: '',
+    meta_description: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    }));
+  };
+
+  const generateSlug = (name: string) =>
+    name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/[\s-]+/g, '-').replace(/^-+|-+$/g, '');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!form.name.trim() || !form.slug.trim()) {
+      toast({ title: 'Name and slug are required', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+    const payload = {
+      name: form.name.trim(),
+      slug: form.slug.trim() || generateSlug(form.name),
+      description: form.description.trim() || null,
+      icon: form.icon.trim() || null,
+      color: form.color.trim() || null,
+      featured: form.featured,
+      display_order: parseInt(form.display_order) || 0,
+      active: form.active,
+      meta_title: form.meta_title.trim() || null,
+      meta_description: form.meta_description.trim() || null,
+    };
+
+    const { error } = await supabase.from('categories').insert(payload);
+
+    setSaving(false);
+
+    if (error) {
+      toast({ title: 'Could not create category', description: error.message, variant: 'destructive' });
+      return;
+    }
+
+    toast({ title: 'Category created' });
+    onSaved();
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add Category</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name *</Label>
+            <Input id="name" name="name" value={form.name} onChange={handleChange} required className="mt-1.5" />
+          </div>
+          <div>
+            <Label htmlFor="slug">Slug *</Label>
+            <Input id="slug" name="slug" value={form.slug} onChange={handleChange} required className="mt-1.5" />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea id="description" name="description" value={form.description} onChange={handleChange} className="mt-1.5" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="icon">Icon Name</Label>
+              <Input id="icon" name="icon" value={form.icon} onChange={handleChange} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="color">Color</Label>
+              <Input id="color" name="color" value={form.color} onChange={handleChange} className="mt-1.5" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="display_order">Display Order</Label>
+              <Input id="display_order" name="display_order" type="number" value={form.display_order} onChange={handleChange} className="mt-1.5" />
+            </div>
+            <div className="flex items-center gap-6 mt-6">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="featured" checked={form.featured} onChange={handleChange} className="h-4 w-4 rounded border-border" />
+                Featured
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="active" checked={form.active} onChange={handleChange} className="h-4 w-4 rounded border-border" />
+                Active
+              </label>
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="meta_title">Meta Title</Label>
+            <Input id="meta_title" name="meta_title" value={form.meta_title} onChange={handleChange} className="mt-1.5" />
+          </div>
+          <div>
+            <Label htmlFor="meta_description">Meta Description</Label>
+            <Input id="meta_description" name="meta_description" value={form.meta_description} onChange={handleChange} className="mt-1.5" />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+              Create Category
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
