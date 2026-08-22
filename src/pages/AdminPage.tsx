@@ -13,6 +13,7 @@ import {
   PackageOpen,
   LogOut,
   Lock,
+  Layers,
 } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
 import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
@@ -32,12 +33,12 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/services';
 import { toast } from '@/hooks/use-toast';
-import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatusRow } from '@/types';
+import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatusRow, Category } from '@/types';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products';
+type Tab = 'overview' | 'orders' | 'products' | 'categories';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-warning/15 text-warning',
@@ -112,6 +113,7 @@ export function AdminPage() {
               { id: 'overview', label: 'Overview', icon: LayoutDashboard },
               { id: 'orders', label: 'Orders', icon: ShoppingCart },
               { id: 'products', label: 'Products', icon: Package },
+              { id: 'categories', label: 'Categories', icon: Layers },
             ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map((t) => (
               <button
                 key={t.id}
@@ -131,6 +133,7 @@ export function AdminPage() {
           {tab === 'overview' && <OverviewTab />}
           {tab === 'orders' && <OrdersTab />}
           {tab === 'products' && <ProductsTab />}
+          {tab === 'categories' && <CategoriesTab />}
         </div>
       </Container>
     </>
@@ -791,3 +794,72 @@ function ProductForm({
     </Dialog>
   );
 }
+
+function CategoriesTab() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCategories = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      setError('Could not load categories.');
+    } else {
+      setCategories(data ?? []);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <EmptyState icon={<Layers className="h-6 w-6" />} title="Error" description={error} />;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="border-b border-border bg-surface/50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Description</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Order</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {categories.map((cat) => (
+              <tr key={cat.id} className="transition-colors hover:bg-surface/30">
+                <td className="px-4 py-3 text-sm font-medium text-foreground">{cat.name}</td>
+                <td className="px-4 py-3 text-sm text-muted-foreground">{cat.description || '-'}</td>
+                <td className="px-4 py-3 text-sm text-foreground">{cat.display_order}</td>
+                <td className="px-4 py-3">
+                  <Badge variant={cat.active ? 'default' : 'destructive'} className="text-xs">
+                    {cat.active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+

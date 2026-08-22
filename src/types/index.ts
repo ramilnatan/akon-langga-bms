@@ -97,3 +97,21 @@ export interface Profile {
   created_at: string;
   updated_at: string;
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  image_url: string | null;
+  banner_image_url: string | null;
+  featured: boolean;
+  display_order: number;
+  active: boolean;
+  meta_title: string | null;
+  meta_description: string | null;
+  created_at: string;
+  updated_at: string;
+}
