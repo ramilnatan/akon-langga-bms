@@ -31,6 +31,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/services';
 import { toast } from '@/hooks/use-toast';
@@ -682,6 +689,7 @@ function ProductForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState({
     name: product?.name ?? '',
     slug: product?.slug ?? '',
@@ -695,6 +703,14 @@ function ProductForm({
     active: product?.active ?? true,
   });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase.from('categories').select('id, name');
+      if (data) setCategories(data);
+    };
+    fetchCategories();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -785,8 +801,22 @@ function ProductForm({
               <Input id="stock" name="stock" type="number" value={form.stock} onChange={handleChange} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="category_id">Category ID</Label>
-              <Input id="category_id" name="category_id" value={form.category_id} onChange={handleChange} className="mt-1.5" />
+              <Label htmlFor="category_id">Category</Label>
+              <Select
+                value={form.category_id}
+                onValueChange={(val) => setForm((prev) => ({ ...prev, category_id: val }))}
+              >
+                <SelectTrigger id="category_id" className="mt-1.5">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="flex gap-6">
