@@ -2,18 +2,30 @@ export * from './navigation';
 
 export interface Product {
   id: string;
+  category_id: string;
+  brand: string | null;
   name: string;
   slug: string;
-  description: string | null;
+  sku: string | null;
+  barcode: string | null;
+  short_description: string | null;
+  full_description: string | null;
+  ingredients: string | null;
+  benefits: string | null;
   price: number;
   sale_price: number | null;
   stock: number;
-  image_url: string | null;
-  category: string | null;
+  low_stock_alert: number | null;
+  weight: number | null;
+  featured_image_url: string | null;
   published: boolean;
+  featured: boolean;
   active: boolean;
+  meta_title: string | null;
+  meta_description: string | null;
   created_at: string;
   updated_at: string;
+  unit: string | null;
 }
 
 export interface CartSession {

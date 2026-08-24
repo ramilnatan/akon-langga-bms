@@ -509,7 +509,7 @@ function OrdersTab() {
 }
 
 function ProductsTab() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<(Product & { categories?: { name: string } })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -519,13 +519,23 @@ function ProductsTab() {
     setLoading(true);
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        id, category_id, brand, name, slug, sku, barcode, short_description,
+        full_description, ingredients, benefits, price, sale_price, stock,
+        low_stock_alert, weight, featured_image_url, published, featured,
+        active, meta_title, meta_description, created_at, updated_at, unit,
+        categories(name)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
       setError('Could not load products.');
     } else {
-      setProducts(data ?? []);
+      const formattedData = (data ?? []).map((p: any) => ({
+        ...p,
+        categories: Array.isArray(p.categories) ? p.categories[0] : p.categories
+      }));
+      setProducts(formattedData);
     }
     setLoading(false);
   }, []);
@@ -603,7 +613,7 @@ function ProductsTab() {
                 {products.map((product) => (
                   <tr key={product.id} className="transition-colors hover:bg-surface/30">
                     <td className="px-4 py-3 text-sm font-medium text-foreground">{product.name}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{product.category ?? '-'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{product.categories?.name ?? '-'}</td>
                     <td className="px-4 py-3 text-sm text-foreground">{formatPrice(product.sale_price ?? product.price)}</td>
                     <td className="px-4 py-3 text-sm text-foreground">{product.stock}</td>
                     <td className="px-4 py-3">
