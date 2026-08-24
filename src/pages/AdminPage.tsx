@@ -14,6 +14,7 @@ import {
   LogOut,
   Lock,
   Layers,
+  AlertTriangle,
 } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
 import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
@@ -799,8 +800,10 @@ function CategoriesTab() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Category | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState<Category | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -820,6 +823,46 @@ function CategoriesTab() {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setIsDeleting(true);
+
+    const { count, error: countError } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_id', deleting.id);
+
+    if (countError) {
+      toast({ title: 'Error checking products', variant: 'destructive' });
+      setIsDeleting(false);
+      return;
+    }
+
+    if (count && count > 0) {
+      setIsDeleting(false);
+      setDeleting(null);
+    
+      toast({
+        title: 'Cannot delete category',
+        description: 'This category has products assigned to it. Please move or reassign those products before deleting it.',
+        variant: 'destructive',
+      });
+    
+      return;
+    }
+
+    const { error } = await supabase.from('categories').delete().eq('id', deleting.id);
+    setIsDeleting(false);
+
+    if (error) {
+      toast({ title: 'Could not delete category', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Category deleted' });
+      setDeleting(null);
+      fetchCategories();
+    }
+  };
 
   if (loading) {
     return (
@@ -873,17 +916,27 @@ function CategoriesTab() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 rounded-full p-0"
-                      onClick={() => {
-                        setEditing(cat);
-                        setShowForm(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-            </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full p-0"
+                        onClick={() => {
+                          setEditing(cat);
+                          setShowForm(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full p-0 text-destructive hover:text-destructive/90"
+                        onClick={() => setDeleting(cat)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -891,6 +944,24 @@ function CategoriesTab() {
           </table>
         </div>
       </div>
+
+      <Dialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Category?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete "{deleting?.name}"? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+              Delete Category
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {showForm && (
         <CategoryForm

@@ -6,6 +6,7 @@ import { MainLayout } from '@/layouts/MainLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { Toaster } from '@/components/ui/toaster';
 
 const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })));
 const ProductsPage = lazy(() => import('@/pages/ProductsPage').then((m) => ({ default: m.ProductsPage })));
@@ -60,7 +61,9 @@ export default function App() {
     <AuthProvider>
       <CartProvider>
         <RouterProvider router={router} />
+        <Toaster />
       </CartProvider>
     </AuthProvider>
   );
 }
+
