@@ -698,6 +698,9 @@ function ProductForm({
     price: product?.price?.toString() ?? '',
     sale_price: product?.sale_price?.toString() ?? '',
     stock: product?.stock?.toString() ?? '0',
+    brand: product?.brand ?? '',
+    sku: product?.sku ?? '',
+    barcode: product?.barcode ?? '',
     category_id: product?.category_id ?? '',
     published: product?.published ?? false,
     active: product?.active ?? true,
@@ -741,6 +744,9 @@ function ProductForm({
       price: parseFloat(form.price),
       sale_price: form.sale_price ? parseFloat(form.sale_price) : null,
       stock: parseInt(form.stock) || 0,
+      brand: form.brand.trim() || null,
+      sku: form.sku.trim() || null,
+      barcode: form.barcode.trim() || null,
       category_id: form.category_id.trim() || null,
       published: form.published,
       active: form.active,
@@ -801,23 +807,37 @@ function ProductForm({
               <Input id="stock" name="stock" type="number" value={form.stock} onChange={handleChange} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="category_id">Category</Label>
-              <Select
-                value={form.category_id}
-                onValueChange={(val) => setForm((prev) => ({ ...prev, category_id: val }))}
-              >
-                <SelectTrigger id="category_id" className="mt-1.5">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="brand">Brand</Label>
+              <Input id="brand" name="brand" value={form.brand} onChange={handleChange} className="mt-1.5" />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sku">SKU</Label>
+              <Input id="sku" name="sku" value={form.sku} onChange={handleChange} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="barcode">Barcode</Label>
+              <Input id="barcode" name="barcode" value={form.barcode} onChange={handleChange} className="mt-1.5" />
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="category_id">Category</Label>
+            <Select
+              value={form.category_id}
+              onValueChange={(val) => setForm((prev) => ({ ...prev, category_id: val }))}
+            >
+              <SelectTrigger id="category_id" className="mt-1.5">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex gap-6">
             <label className="flex items-center gap-2 text-sm">
