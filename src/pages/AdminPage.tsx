@@ -685,11 +685,12 @@ function ProductForm({
   const [form, setForm] = useState({
     name: product?.name ?? '',
     slug: product?.slug ?? '',
-    description: product?.description ?? '',
+    short_description: product?.short_description ?? '',
+    full_description: product?.full_description ?? '',
     price: product?.price?.toString() ?? '',
     sale_price: product?.sale_price?.toString() ?? '',
     stock: product?.stock?.toString() ?? '0',
-    category: product?.category ?? '',
+    category_id: product?.category_id ?? '',
     published: product?.published ?? false,
     active: product?.active ?? true,
   });
@@ -719,11 +720,12 @@ function ProductForm({
     const payload = {
       name: form.name.trim(),
       slug,
-      description: form.description.trim() || null,
+      short_description: form.short_description.trim() || null,
+      full_description: form.full_description.trim() || null,
       price: parseFloat(form.price),
       sale_price: form.sale_price ? parseFloat(form.sale_price) : null,
       stock: parseInt(form.stock) || 0,
-      category: form.category.trim() || null,
+      category_id: form.category_id.trim() || null,
       published: form.published,
       active: form.active,
       updated_at: new Date().toISOString(),
@@ -760,8 +762,12 @@ function ProductForm({
             <Input id="slug" name="slug" value={form.slug} onChange={handleChange} placeholder="auto-generated" className="mt-1.5" />
           </div>
           <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" value={form.description} onChange={handleChange} className="mt-1.5" />
+            <Label htmlFor="short_description">Short Description</Label>
+            <Textarea id="short_description" name="short_description" value={form.short_description} onChange={handleChange} className="mt-1.5" />
+          </div>
+          <div>
+            <Label htmlFor="full_description">Full Description</Label>
+            <Textarea id="full_description" name="full_description" value={form.full_description} onChange={handleChange} className="mt-1.5" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -779,8 +785,8 @@ function ProductForm({
               <Input id="stock" name="stock" type="number" value={form.stock} onChange={handleChange} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="category">Category</Label>
-              <Input id="category" name="category" value={form.category} onChange={handleChange} className="mt-1.5" />
+              <Label htmlFor="category_id">Category ID</Label>
+              <Input id="category_id" name="category_id" value={form.category_id} onChange={handleChange} className="mt-1.5" />
             </div>
           </div>
           <div className="flex gap-6">
