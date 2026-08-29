@@ -1,23 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
-import { ShoppingBag, ArrowLeft, Minus, Plus, PackageOpen, Check } from 'lucide-react';
-import { Section } from '@/components/layout/Section';
-import { Container } from '@/components/layout/Container';
-import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/services';
-import { useCart } from '@/hooks/use-cart';
-import { toast } from '@/hooks/use-toast';
-import type { Product } from '@/types';
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { motion } from "framer-motion";
+import { ShoppingBag, ArrowLeft, Minus, Plus, PackageOpen, Check } from "lucide-react";
+import { Section } from "@/components/layout/Section";
+import { Container } from "@/components/layout/Container";
+import { LoadingSpinner } from "@/components/feedback/LoadingSpinner";
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/services";
+import { useCart } from "@/hooks/use-cart";
+import { toast } from "@/hooks/use-toast";
+import type { Product } from "@/types";
+
+interface ProductDetail extends Product {
+  categories: { name: string } | null;
+  product_images: { image_url: string; alt_text: string }[];
+}
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -29,17 +34,19 @@ export function ProductDetailPage() {
     setLoading(true);
     setNotFound(false);
     supabase
-      .from('products')
-      .select('*')
-      .eq('slug', slug)
-      .eq('published', true)
-      .eq('active', true)
+      .from("products")
+      .select("*, categories(name), product_images(image_url, alt_text)")
+      .eq("slug", slug)
+      .eq("published", true)
+      .eq("active", true)
+      .eq("product_images.is_primary", true)
+      .eq("product_images.active", true)
       .maybeSingle()
       .then(({ data, error }) => {
         if (error || !data) {
           setNotFound(true);
         } else {
-          setProduct(data as Product);
+          setProduct(data as ProductDetail);
           setQuantity(1);
         }
         setLoading(false);
@@ -47,7 +54,7 @@ export function ProductDetailPage() {
   }, [slug]);
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
+    new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(price);
 
   const isOnSale = product?.sale_price !== null && product?.sale_price !== undefined && product.sale_price < product.price;
   const effectivePrice = product ? (product.sale_price ?? product.price) : 0;
@@ -59,9 +66,9 @@ export function ProductDetailPage() {
     const { error } = await addToCart(product.id, quantity);
     setAdding(false);
     if (error) {
-      toast({ title: 'Could not add to cart', description: error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Added to cart', description: `${quantity} × ${product.name}` });
+      toast({ title: "Could not add to cart", description: error, variant: "destructive" });
+        } else {
+      toast({ title: "Added to cart", description: `${quantity} × ${product.name}` });
     }
   };
 
@@ -82,9 +89,9 @@ export function ProductDetailPage() {
 
     setAdding(false);
     if (error) {
-      toast({ title: 'Could not prepare cart', description: error, variant: 'destructive' });
+      toast({ title: "Could not prepare cart", description: error, variant: "destructive" });
     } else {
-      navigate('/checkout');
+      navigate("/checkout");
     }
   };
 
@@ -117,7 +124,7 @@ export function ProductDetailPage() {
     <>
       <Helmet>
         <title>{product.name} — AKON LANGGA</title>
-        <meta name="description" content={product.description ?? product.name} />
+        <meta name="description" content={product.meta_description ?? product.full_description ?? product.name} />
       </Helmet>
       <Section spacing="md">
         <Container>
@@ -133,14 +140,20 @@ export function ProductDetailPage() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="relative aspect-square overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-surface to-secondary/15 shadow-card"
+              transition={{ duration: 0.5, ease: "easeOut" }}
+                            className="relative aspect-square overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-surface to-secondary/15 shadow-card"
             >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="flex h-24 w-24 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm">
-                  <ShoppingBag className="h-12 w-12" aria-hidden="true" />
-                </span>
-              </div>
+                            <div className="group absolute inset-0 flex items-center justify-center">
+                                {product.product_images?.[0] ? (
+                  <img
+                    src={product.product_images[0].image_url}
+                    alt={product.product_images[0].alt_text || product.name}
+                    className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <ShoppingBag className="h-16 w-16 text-muted-foreground/30" />
+                )}
+                            </div>
               {isOnSale && (
                 <Badge className="absolute left-6 top-6 bg-secondary text-secondary-foreground">
                   Sale
@@ -156,12 +169,12 @@ export function ProductDetailPage() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+              transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
               className="flex flex-col"
             >
-              {product.category && (
+              {product.categories?.name && (
                 <p className="mb-2 text-sm font-medium uppercase tracking-wider text-secondary">
-                  {product.category}
+                  {product.categories.name}
                 </p>
               )}
               <h1 className="font-heading text-3xl font-semibold text-foreground sm:text-4xl">
@@ -179,9 +192,9 @@ export function ProductDetailPage() {
                 )}
               </div>
 
-              {product.description && (
+              {product.full_description && (
                 <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                  {product.description}
+                  {product.full_description}
                 </p>
               )}
 

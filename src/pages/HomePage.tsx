@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -17,6 +17,7 @@ import {
   Mail,
   MessageCircle,
 } from 'lucide-react';
+import { supabase } from '@/services';
 import { Section } from '@/components/layout/Section';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/button';
@@ -118,22 +119,24 @@ const pillars = [
   },
 ];
 
-const categories = [
-  {
-    icon: Coffee,
-    title: 'Herbal Coffee',
-    description: 'Premium herbal coffee blends made from natural ingredients.',
-    button: 'View Products',
-    href: '/products',
-  },
-  {
-    icon: Sparkles,
-    title: 'Natural Handmade Skincare',
-    description: 'Gentle handmade soaps and skincare crafted with care.',
-    button: 'Explore Skincare',
-    href: '/products',
-  },
-];
+type Category = {
+  id: string;
+  name: string;
+  description: string;
+  slug: string;
+  icon: string;
+  display_order: number;
+};
+
+const iconMap: Record<string, React.ElementType> = {
+  Coffee,
+  Leaf,
+  Sparkles,
+  Heart,
+  Package,
+  Sprout,
+  Recycle,
+};
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -145,6 +148,28 @@ const fadeUp = {
 };
 
 export function HomePage() {
+  const [dbCategories, setDbCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('active', true)
+        .eq('featured', true)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        return;
+      }
+
+      setDbCategories(data || []);
+    }
+
+    fetchCategories();
+  }, []);
+
   return (
     <>
       <Helmet>
@@ -273,38 +298,41 @@ export function HomePage() {
           </motion.div>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 sm:gap-8">
-            {categories.map((category, i) => (
-              <motion.article
-                key={category.title}
-                custom={i}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: '-80px' }}
-                className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-8 shadow-card backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elevated sm:p-10"
-              >
-                {/* Soft gradient overlay on hover */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
+            {dbCategories.map((category, i) => {
+              const Icon = iconMap[category.icon] || Leaf;
+              return (
+                <motion.article
+                  key={category.id}
+                  custom={i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: '-80px' }}
+                  className="group relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-8 shadow-card backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-elevated sm:p-10"
+                >
+                  {/* Soft gradient overlay on hover */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
 
-                <div className="relative flex flex-col items-start">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-soft transition-transform duration-300 group-hover:scale-110">
-                    <category.icon className="h-7 w-7" aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-6 font-heading text-2xl font-semibold text-foreground">
-                    {category.title}
-                  </h3>
-                  <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                    {category.description}
-                  </p>
-                  <Button asChild variant="outline" className="mt-6 rounded-full">
-                    <Link to={category.href}>
-                      {category.button}
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-                    </Link>
-                  </Button>
-                </div>
-              </motion.article>
-            ))}
+                  <div className="relative flex flex-col items-start">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-soft transition-transform duration-300 group-hover:scale-110">
+                      <Icon className="h-7 w-7" aria-hidden="true" />
+                    </span>
+                    <h3 className="mt-6 font-heading text-2xl font-semibold text-foreground">
+                      {category.name}
+                    </h3>
+                    <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                      {category.description}
+                    </p>
+                    <Button asChild variant="outline" className="mt-6 rounded-full">
+                      <Link to={`/products?category=${category.slug}`}>
+                        Shop Collection
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  </div>
+                </motion.article>
+              );
+            })}
           </div>
         </Container>
       </Section>

@@ -690,17 +690,69 @@ function ProductForm({
   onSaved: () => void;
 }) {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({ title: 'Invalid file type', description: 'Please upload a JPEG, PNG, or WebP image.', variant: 'destructive' });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 5 MB.', variant: 'destructive' });
+      return;
+    }
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  useEffect(() => {
+    if (product) {
+      const fetchPrimaryImage = async () => {
+        const { data } = await supabase
+          .from('product_images')
+          .select('image_url')
+          .eq('product_id', product.id)
+          .eq('is_primary', true)
+          .eq('active', true)
+          .maybeSingle();
+        
+        if (data) {
+          setPreviewUrl(data.image_url);
+        }
+      };
+      fetchPrimaryImage();
+    }
+  }, [product]);
+
   const [form, setForm] = useState({
     name: product?.name ?? '',
     slug: product?.slug ?? '',
     short_description: product?.short_description ?? '',
     full_description: product?.full_description ?? '',
+    meta_title: product?.meta_title ?? '',
+    meta_description: product?.meta_description ?? '',
     price: product?.price?.toString() ?? '',
     sale_price: product?.sale_price?.toString() ?? '',
     stock: product?.stock?.toString() ?? '0',
+    unit: product?.unit ?? '',
     brand: product?.brand ?? '',
     sku: product?.sku ?? '',
     barcode: product?.barcode ?? '',
+    ingredients: product?.ingredients ?? '',
+    benefits: product?.benefits ?? '',
+    low_stock_alert: product?.low_stock_alert?.toString() ?? '10',
+    weight: product?.weight?.toString() ?? '0',
+    featured_image_url: product?.featured_image_url ?? '',
+    featured: product?.featured ?? false,
     category_id: product?.category_id ?? '',
     published: product?.published ?? false,
     active: product?.active ?? true,
@@ -741,12 +793,21 @@ function ProductForm({
       slug,
       short_description: form.short_description.trim() || null,
       full_description: form.full_description.trim() || null,
+      meta_title: form.meta_title.trim() || null,
+      meta_description: form.meta_description.trim() || null,
       price: parseFloat(form.price),
       sale_price: form.sale_price ? parseFloat(form.sale_price) : null,
       stock: parseInt(form.stock) || 0,
+      unit: form.unit.trim() || null,
       brand: form.brand.trim() || null,
       sku: form.sku.trim() || null,
       barcode: form.barcode.trim() || null,
+      low_stock_alert: parseInt(form.low_stock_alert) || 0,
+      weight: parseFloat(form.weight) || 0,
+      featured_image_url: form.featured_image_url.trim() || null,
+      featured: form.featured,
+      ingredients: form.ingredients.trim() || null,
+      benefits: form.benefits.trim() || null,
       category_id: form.category_id.trim() || null,
       published: form.published,
       active: form.active,
@@ -755,15 +816,58 @@ function ProductForm({
 
     const result = product
       ? await supabase.from('products').update(payload).eq('id', product.id)
-      : await supabase.from('products').insert({ ...payload, created_at: new Date().toISOString() });
-
-    setSaving(false);
+      : await supabase.from('products').insert({ ...payload, created_at: new Date().toISOString() }).select('id').single();
 
     if (result.error) {
+      setSaving(false);
       toast({ title: 'Could not save product', description: result.error.message, variant: 'destructive' });
       return;
     }
 
+    const productId = result.data?.id || product?.id;
+
+    if (productId && selectedFile) {
+      try {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${productId}/${crypto.randomUUID()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(fileName);
+
+        if (product) {
+          const { error: updateError } = await supabase
+            .from('product_images')
+            .update({ is_primary: false })
+            .eq('product_id', productId);
+          
+          if (updateError) throw updateError;
+        }
+
+        const { error: insertError } = await supabase.from('product_images').insert({
+          product_id: productId,
+          image_url: publicUrl,
+          image_type: 'primary',
+          alt_text: `${form.name} product image`,
+          is_primary: true,
+          display_order: 0,
+          active: true
+        });
+
+        if (insertError) throw insertError;
+
+      } catch (err: any) {
+        setSaving(false);
+        toast({ title: 'Image upload failed', description: err.message, variant: 'destructive' });
+        return;
+      }
+    }
+
+    setSaving(false);
     toast({ title: product ? 'Product updated' : 'Product created' });
     onSaved();
   };
@@ -791,6 +895,32 @@ function ProductForm({
             <Label htmlFor="full_description">Full Description</Label>
             <Textarea id="full_description" name="full_description" value={form.full_description} onChange={handleChange} className="mt-1.5" />
           </div>
+          <div>
+            <Label htmlFor="meta_title">Meta Title</Label>
+            <Input
+              id="meta_title"
+              name="meta_title"
+              value={form.meta_title}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="meta_description">Meta Description</Label>
+            <Textarea
+              id="meta_description"
+              name="meta_description"
+              value={form.meta_description}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="ingredients">Ingredients</Label>
+            <Textarea id="ingredients" name="ingredients" value={form.ingredients} onChange={handleChange} className="mt-1.5" />
+          </div>
+          <div>
+            <Label htmlFor="benefits">Benefits</Label>
+            <Textarea id="benefits" name="benefits" value={form.benefits} onChange={handleChange} className="mt-1.5" />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="price">Price (PHP) *</Label>
@@ -807,18 +937,55 @@ function ProductForm({
               <Input id="stock" name="stock" type="number" value={form.stock} onChange={handleChange} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="brand">Brand</Label>
-              <Input id="brand" name="brand" value={form.brand} onChange={handleChange} className="mt-1.5" />
+              <Label htmlFor="unit">Unit</Label>
+              <Input id="unit" name="unit" value={form.unit} onChange={handleChange} className="mt-1.5" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
+              <Label htmlFor="brand">Brand</Label>
+              <Input id="brand" name="brand" value={form.brand} onChange={handleChange} className="mt-1.5" />
+            </div>
+            <div>
               <Label htmlFor="sku">SKU</Label>
               <Input id="sku" name="sku" value={form.sku} onChange={handleChange} className="mt-1.5" />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="barcode">Barcode</Label>
               <Input id="barcode" name="barcode" value={form.barcode} onChange={handleChange} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="low_stock_alert">Low Stock Alert</Label>
+              <Input id="low_stock_alert" name="low_stock_alert" type="number" value={form.low_stock_alert} onChange={handleChange} className="mt-1.5" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input id="weight" name="weight" type="number" step="0.01" value={form.weight} onChange={handleChange} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="image">Featured Image</Label>
+              <div className="mt-1.5 flex flex-col gap-3">
+                {previewUrl ? (
+                  <div className="flex items-center gap-4">
+                    <img src={previewUrl} alt="Preview" className="h-16 w-16 rounded-lg object-cover" />
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs truncate max-w-[120px]">{selectedFile?.name || 'Current image'}</span>
+                      <Button variant="outline" size="sm" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}>Change</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button variant="outline" asChild>
+                    <label>
+                      Choose Image
+                      <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} />
+                    </label>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           <div>
@@ -843,6 +1010,10 @@ function ProductForm({
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="published" checked={form.published} onChange={handleChange} className="h-4 w-4 rounded border-border" />
               Published
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="featured" checked={form.featured} onChange={handleChange} className="h-4 w-4 rounded border-border" />
+              Featured
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="active" checked={form.active} onChange={handleChange} className="h-4 w-4 rounded border-border" />

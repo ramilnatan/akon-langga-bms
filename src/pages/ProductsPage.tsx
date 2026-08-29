@@ -14,6 +14,11 @@ import { useCart } from '@/hooks/use-cart';
 import { toast } from '@/hooks/use-toast';
 import type { Product } from '@/types';
 
+type ProductWithDetails = Product & {
+  categories: { name: string } | null;
+  product_images: { image_url: string; is_primary: boolean; active: boolean; alt_text: string | null }[];
+};
+
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   visible: (i: number) => ({
@@ -24,7 +29,7 @@ const fadeUp = {
 };
 
 export function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -36,7 +41,18 @@ export function ProductsPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          categories (
+            name
+          ),
+          product_images (
+            image_url,
+            is_primary,
+            active,
+            alt_text
+          )
+        `)
         .eq('published', true)
         .eq('active', true)
         .order('created_at', { ascending: false });
@@ -44,7 +60,7 @@ export function ProductsPage() {
       if (error) {
         setError('Could not load products. Please try again later.');
       } else {
-        setProducts(data ?? []);
+        setProducts((data as unknown as ProductWithDetails[]) ?? []);
       }
       setLoading(false);
     };
@@ -52,16 +68,16 @@ export function ProductsPage() {
   }, []);
 
   const categories = useMemo(() => {
-    const set = new Set(products.map((p) => p.category).filter(Boolean));
+    const set = new Set(products.map((p) => p.categories?.name).filter(Boolean));
     return Array.from(set) as string[];
   }, [products]);
 
   const filtered = useMemo(() => {
     if (!selectedCategory) return products;
-    return products.filter((p) => p.category === selectedCategory);
+    return products.filter((p) => p.categories?.name === selectedCategory);
   }, [products, selectedCategory]);
 
-  const handleAdd = async (product: Product) => {
+  const handleAdd = async (product: ProductWithDetails) => {
     setAddingId(product.id);
     const { error } = await addToCart(product.id, 1);
     setAddingId(null);
@@ -158,11 +174,24 @@ export function ProductsPage() {
                     className="group flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated"
                   >
                     <Link to={`/products/${product.slug}`} className="relative block aspect-[4/3] overflow-hidden bg-gradient-to-br from-surface to-secondary/15">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                          <ShoppingBag className="h-8 w-8" aria-hidden="true" />
-                        </span>
-                      </div>
+                      {(() => {
+                        const primaryImage = product.product_images?.find(
+                          (img) => img.is_primary && img.active
+                        );
+                        return primaryImage ? (
+                          <img
+                            src={primaryImage.image_url}
+                            alt={primaryImage.alt_text || product.name}
+                            className="h-full w-full object-contain"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                              <ShoppingBag className="h-8 w-8" aria-hidden="true" />
+                            </span>
+                          </div>
+                        );
+                      })()}
                       {isOnSale && (
                         <Badge className="absolute left-4 top-4 bg-secondary text-secondary-foreground">
                           Sale
@@ -176,9 +205,9 @@ export function ProductsPage() {
                     </Link>
 
                     <div className="flex flex-1 flex-col p-6">
-                      {product.category && (
+                      {product.categories?.name && (
                         <p className="mb-1 text-xs font-medium uppercase tracking-wider text-secondary">
-                          {product.category}
+                          {product.categories.name}
                         </p>
                       )}
                       <h3 className="font-heading text-lg font-semibold text-foreground">
@@ -186,9 +215,9 @@ export function ProductsPage() {
                           {product.name}
                         </Link>
                       </h3>
-                      {product.description && (
+                      {product.short_description && (
                         <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground line-clamp-2">
-                          {product.description}
+                          {product.short_description}
                         </p>
                       )}
                       <div className="mt-4 flex items-center justify-between">
