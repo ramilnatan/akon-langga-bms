@@ -19,6 +19,24 @@ interface ProductDetail extends Product {
   product_images: { image_url: string; alt_text: string }[];
 }
 
+function FormatList({ text }: { text: string }) {
+  // Try splitting by "•" first, if not found, use newlines
+  const items = text.includes('•') 
+    ? text.split('•').filter((item) => item.trim() !== '')
+    : text.split('\n').filter((item) => item.trim() !== '');
+
+  return (
+    <ul className="mt-2 space-y-1 text-sm text-muted-foreground list-none">
+      {items.map((item, index) => (
+        <li key={index} className="flex items-start">
+          <span className="mr-2">•</span>
+          <span>{item.trim()}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -192,10 +210,24 @@ export function ProductDetailPage() {
                 )}
               </div>
 
-              {product.full_description && (
+                            {product.full_description && (
                 <p className="mt-6 text-base leading-relaxed text-muted-foreground">
                   {product.full_description}
                 </p>
+              )}
+
+                            {product.ingredients && (
+                <div className="mt-8">
+                  <h3 className="font-heading text-lg font-semibold text-foreground">Ingredients</h3>
+                  <FormatList text={product.ingredients} />
+                </div>
+              )}
+
+              {product.benefits && (
+                <div className="mt-8">
+                  <h3 className="font-heading text-lg font-semibold text-foreground">Benefits</h3>
+                  <FormatList text={product.benefits} />
+                </div>
               )}
 
               <div className="mt-6 flex items-center gap-2 text-sm">

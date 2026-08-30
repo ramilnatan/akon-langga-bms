@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { PackageOpen, ShoppingBag } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Section } from '@/components/layout/Section';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -15,7 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import type { Product } from '@/types';
 
 type ProductWithDetails = Product & {
-  categories: { name: string } | null;
+  categories: { name: string; slug: string } | null;
   product_images: { image_url: string; is_primary: boolean; active: boolean; alt_text: string | null }[];
 };
 
@@ -32,7 +32,8 @@ export function ProductsPage() {
   const [products, setProducts] = useState<ProductWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCategory = searchParams.get('category');
   const [addingId, setAddingId] = useState<string | null>(null);
   const { addToCart } = useCart();
 
@@ -44,7 +45,8 @@ export function ProductsPage() {
         .select(`
           *,
           categories (
-            name
+            name,
+            slug
           ),
           product_images (
             image_url,
@@ -68,14 +70,27 @@ export function ProductsPage() {
   }, []);
 
   const categories = useMemo(() => {
-    const set = new Set(products.map((p) => p.categories?.name).filter(Boolean));
-    return Array.from(set) as string[];
+    const categoryMap = new Map<string, string>(); // slug -> name
+    products.forEach((p) => {
+      if (p.categories?.slug && p.categories?.name) {
+        categoryMap.set(p.categories.slug, p.categories.name);
+      }
+    });
+    return Array.from(categoryMap.entries());
   }, [products]);
 
   const filtered = useMemo(() => {
     if (!selectedCategory) return products;
-    return products.filter((p) => p.categories?.name === selectedCategory);
+    return products.filter((p) => p.categories?.slug === selectedCategory);
   }, [products, selectedCategory]);
+
+  const handleCategorySelect = (catSlug: string | null) => {
+    if (catSlug) {
+      setSearchParams({ category: catSlug });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const handleAdd = async (product: ProductWithDetails) => {
     setAddingId(product.id);
@@ -134,7 +149,7 @@ export function ProductsPage() {
             {categories.length > 1 && (
               <div className="mb-10 flex flex-wrap justify-center gap-2">
                 <button
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => handleCategorySelect(null)}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     !selectedCategory
                       ? 'bg-primary text-primary-foreground'
@@ -143,17 +158,17 @@ export function ProductsPage() {
                 >
                   All
                 </button>
-                {categories.map((cat) => (
+                {categories.map(([slug, name]) => (
                   <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    key={slug}
+                    onClick={() => handleCategorySelect(slug)}
                     className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                      selectedCategory === cat
+                      selectedCategory === slug
                         ? 'bg-primary text-primary-foreground'
                         : 'border border-border text-foreground/70 hover:border-primary hover:text-primary'
                     }`}
                   >
-                    {cat}
+                    {name}
                   </button>
                 ))}
               </div>
@@ -182,7 +197,7 @@ export function ProductsPage() {
                           <img
                             src={primaryImage.image_url}
                             alt={primaryImage.alt_text || product.name}
-                            className="h-full w-full object-contain"
+                            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center">
