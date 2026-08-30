@@ -35,6 +35,32 @@ export interface CartSession {
   updated_at: string;
 }
 
+export interface BundleItem {
+  id: string;
+  bundle_id: string;
+  product_id: string;
+  quantity: number;
+  product?: Product;
+}
+
+export interface Bundle {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  regular_price: number;
+  bundle_price: number;
+  discount_percentage: number | null;
+  image_url: string | null;
+  badge: string | null;
+  active: boolean;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+  bundle_items?: BundleItem[];
+}
+
 export interface CartProduct {
   id: string;
   name: string;
@@ -69,6 +95,7 @@ export interface Order {
   created_at: string;
   updated_at: string;
 }
+
 
 export interface OrderItem {
   id: string;
@@ -110,6 +137,7 @@ export interface Profile {
   updated_at: string;
 }
 
+
 export interface Category {
   id: string;
   name: string;
@@ -127,3 +155,4 @@ export interface Category {
   created_at: string;
   updated_at: string;
 }
+

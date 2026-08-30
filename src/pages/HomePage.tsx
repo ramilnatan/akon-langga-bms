@@ -17,6 +17,7 @@ import {
   Mail,
   MessageCircle,
 } from 'lucide-react';
+import type { Bundle } from '@/types';
 import { supabase } from '@/services';
 import { Section } from '@/components/layout/Section';
 import { Container } from '@/components/layout/Container';
@@ -60,21 +61,6 @@ const bestSellers = [
     description: 'A curated trio of handmade skincare for a radiant complexion.',
     price: '₱399.00',
     icon: Leaf,
-  },
-];
-
-const bundles = [
-  {
-    title: 'Wellness Morning Ritual',
-    description: 'Start your day with our herbal coffee and a glowing skincare routine.',
-    savings: 'Save ₱120',
-    icon: Coffee,
-  },
-  {
-    title: 'Glow & Care Bundle',
-    description: 'A complete set of handmade soaps and botanical skincare essentials.',
-    savings: 'Save ₱180',
-    icon: Sparkles,
   },
 ];
 
@@ -149,6 +135,7 @@ const fadeUp = {
 
 export function HomePage() {
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [activeBundle, setActiveBundle] = useState<Bundle | null>(null);
 
   useEffect(() => {
     async function fetchCategories() {
@@ -167,7 +154,25 @@ export function HomePage() {
       setDbCategories(data || []);
     }
 
+    async function fetchBundle() {
+      const { data, error } = await supabase
+        .from('bundles')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching bundle:', error);
+        return;
+      }
+
+      setActiveBundle(data);
+    }
+
     fetchCategories();
+    fetchBundle();
   }, []);
 
   return (
@@ -432,57 +437,79 @@ export function HomePage() {
       </Section>
 
       {/* Bundle & Save */}
-      <Section spacing="lg" tone="muted">
-        <Container>
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto max-w-2xl text-center"
-          >
-            <p className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-secondary">
-              Bundles
-            </p>
-            <h2 className="font-heading text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              Bundle &amp; Save
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground text-balance">
-              Complete wellness combinations carefully prepared for you.
-            </p>
-          </motion.div>
+      {activeBundle && (
+        <Section spacing="lg" tone="muted">
+          <Container>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.5 }}
+              className="mx-auto max-w-2xl text-center"
+            >
+              <p className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-secondary">
+                Bundles
+              </p>
+              <h2 className="font-heading text-3xl font-semibold text-foreground sm:text-4xl text-balance">
+                Bundle &amp; Save
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-muted-foreground text-balance">
+                Complete wellness combinations carefully prepared for you.
+              </p>
+            </motion.div>
 
-          <div className="mt-12 grid gap-6 sm:gap-8">
-            {bundles.map((bundle, i) => (
+            <div className="mt-12 grid gap-6 sm:gap-8">
               <motion.article
-                key={bundle.title}
-                custom={i}
+                custom={0}
                 variants={fadeUp}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: '-80px' }}
-                className={`group grid items-center gap-6 overflow-hidden rounded-3xl border border-border/60 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated sm:p-8 lg:grid-cols-2 lg:gap-10 ${
-                  i % 2 === 1 ? 'lg:[&>div:first-child]:order-2' : ''
-                }`}
+                className="group grid items-center gap-6 overflow-hidden rounded-3xl border border-border/60 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated sm:p-8 lg:grid-cols-2 lg:gap-10"
               >
                 <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-surface to-secondary/20">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-20 w-20 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                      <bundle.icon className="h-10 w-10" aria-hidden="true" />
+                  {activeBundle.image_url ? (
+                    <img
+                      src={activeBundle.image_url}
+                      alt={activeBundle.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                        <Package className="h-10 w-10" aria-hidden="true" />
+                      </span>
+                    </div>
+                  )}
+                  {activeBundle.badge && (
+                    <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft">
+                      <Sparkles className="h-3 w-3" aria-hidden="true" />
+                      {activeBundle.badge}
                     </span>
-                  </div>
-                  <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft">
-                    <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    {bundle.savings}
-                  </span>
+                  )}
                 </div>
                 <div className="flex flex-col">
                   <h3 className="font-heading text-2xl font-semibold text-foreground">
-                    {bundle.title}
+                    {activeBundle.name}
                   </h3>
-                  <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                    {bundle.description}
-                  </p>
+                  {activeBundle.description && (
+                    <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+                      {activeBundle.description}
+                    </p>
+                  )}
+                  <div className="mt-6 flex items-center gap-4">
+                    <span className="text-lg font-semibold text-primary">
+                      ₱{activeBundle.bundle_price.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-muted-foreground line-through">
+                      ₱{activeBundle.regular_price.toLocaleString()}
+                    </span>
+                    {activeBundle.discount_percentage && (
+                      <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-xs font-semibold text-secondary">
+                        {activeBundle.discount_percentage}% OFF
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-6">
                     <Button asChild className="rounded-full shadow-soft">
                       <Link to="/bundles">
@@ -493,10 +520,10 @@ export function HomePage() {
                   </div>
                 </div>
               </motion.article>
-            ))}
-          </div>
-        </Container>
-      </Section>
+            </div>
+          </Container>
+        </Section>
+      )}
 
       {/* Why Choose AKON LANGGA */}
       <Section spacing="lg" tone="default">
