@@ -157,7 +157,13 @@ export function HomePage() {
     async function fetchBundle() {
       const { data, error } = await supabase
         .from('bundles')
-        .select('*')
+        .select(`
+          *,
+          bundle_items (
+            *,
+            product:products (*)
+          )
+        `)
         .eq('active', true)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -465,14 +471,14 @@ export function HomePage() {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: '-80px' }}
-                className="group grid items-center gap-6 overflow-hidden rounded-3xl border border-border/60 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated sm:p-8 lg:grid-cols-2 lg:gap-10"
+                className="group grid items-center gap-6 overflow-hidden rounded-3xl border border-border/60 bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated sm:p-8 lg:grid-cols-2 lg:gap-10"
               >
                 <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-surface to-secondary/20">
                   {activeBundle.image_url ? (
                     <img
                       src={activeBundle.image_url}
                       alt={activeBundle.name}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -497,6 +503,29 @@ export function HomePage() {
                       {activeBundle.description}
                     </p>
                   )}
+                  {activeBundle.start_date && activeBundle.end_date ? (
+                    <p className="mt-2 text-sm font-medium text-secondary">
+                      Available {new Date(activeBundle.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – {new Date(activeBundle.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  ) : activeBundle.start_date ? (
+                    <p className="mt-2 text-sm font-medium text-secondary">
+                      Available from {new Date(activeBundle.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  ) : activeBundle.end_date ? (
+                    <p className="mt-2 text-sm font-medium text-secondary">
+                      Available until {new Date(activeBundle.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  ) : null}
+                  <div className="mt-4 flex flex-col gap-2">
+                    <p className="text-sm font-semibold text-foreground">Includes:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {activeBundle.bundle_items?.map((item) => (
+                        <li key={item.id}>
+                          {item.product?.name} &times; {item.quantity}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   <div className="mt-6 flex items-center gap-4">
                     <span className="text-lg font-semibold text-primary">
                       ₱{activeBundle.bundle_price.toLocaleString()}

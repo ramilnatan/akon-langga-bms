@@ -41,12 +41,12 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/services';
 import { toast } from '@/hooks/use-toast';
-import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatusRow, Category } from '@/types';
+import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatusRow, Category, Bundle, BundleItem } from '@/types';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products' | 'categories';
+type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-warning/15 text-warning',
@@ -122,6 +122,7 @@ export function AdminPage() {
               { id: 'orders', label: 'Orders', icon: ShoppingCart },
               { id: 'products', label: 'Products', icon: Package },
               { id: 'categories', label: 'Categories', icon: Layers },
+              { id: 'bundles', label: 'Bundles', icon: PackageOpen },
             ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map((t) => (
               <button
                 key={t.id}
@@ -142,6 +143,7 @@ export function AdminPage() {
           {tab === 'orders' && <OrdersTab />}
           {tab === 'products' && <ProductsTab />}
           {tab === 'categories' && <CategoriesTab />}
+          {tab === 'bundles' && <BundlesTab />}
         </div>
       </Container>
     </>
@@ -1215,6 +1217,358 @@ function CategoriesTab() {
         />
       )}
     </>
+  );
+}
+
+function BundlesTab() {
+  const [bundles, setBundles] = useState<(Bundle & { bundle_items?: (BundleItem & { product?: { name: string } })[] })[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Bundle | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const fetchBundles = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('bundles')
+      .select(`
+        *,
+        bundle_items (
+          *,
+          product:products (name)
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      setError('Could not load bundles.');
+    } else {
+      setBundles(data ?? []);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchBundles();
+  }, [fetchBundles]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <EmptyState icon={<PackageOpen className="h-6 w-6" />} title="Error" description={error} />;
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-lg font-semibold text-foreground">Bundles ({bundles.length})</h2>
+        <Button
+          className="rounded-full shadow-soft"
+          onClick={() => {
+            setEditing(null);
+            setShowForm(true);
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Bundle
+        </Button>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="border-b border-border bg-surface/50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Price</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Items</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {bundles.map((bundle) => (
+                <tr key={bundle.id} className="transition-colors hover:bg-surface/30">
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">{bundle.name}</td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {formatPrice(bundle.bundle_price)}
+                    <span className="ml-2 text-xs text-muted-foreground line-through">{formatPrice(bundle.regular_price)}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge className={bundle.active ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}>
+                      {bundle.active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    <ul className="list-disc list-inside">
+                      {bundle.bundle_items?.map((item) => (
+                        <li key={item.id}>
+                          {item.product?.name} (×{item.quantity})
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 rounded-full p-0"
+                      onClick={() => {
+                        setEditing(bundle);
+                        setShowForm(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showForm && (
+        <BundleForm
+          bundle={editing}
+          onClose={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
+          onSaved={() => {
+            setShowForm(false);
+            setEditing(null);
+            fetchBundles();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+type ProductOption = { id: string; name: string };
+
+type BundleFormState = {
+  name: string;
+  slug: string;
+  description: string;
+  regular_price: string;
+  bundle_price: string;
+  image_url: string;
+  badge: string | null;
+  start_date: string;
+  end_date: string;
+  active: boolean;
+};
+
+function BundleForm({
+  bundle,
+  onClose,
+  onSaved,
+}: {
+  bundle: Bundle | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<BundleFormState>({
+    name: bundle?.name ?? '',
+    slug: bundle?.slug ?? '',
+    description: bundle?.description ?? '',
+    regular_price: bundle?.regular_price?.toString() ?? '',
+    bundle_price: bundle?.bundle_price?.toString() ?? '',
+    image_url: bundle?.image_url ?? '',
+    badge: bundle?.badge ?? null,
+    start_date: bundle?.start_date ?? '',
+    end_date: bundle?.end_date ?? '',
+    active: bundle?.active ?? true,
+  });
+
+  const [items, setItems] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [saving, setSaving] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(bundle?.image_url ?? null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const [prodRes, itemRes] = await Promise.all([
+        supabase.from('products').select('id, name').eq('active', true),
+        bundle ? supabase.from('bundle_items').select('product_id, quantity, product:products(name)').eq('bundle_id', bundle.id) : Promise.resolve({ data: [] })
+      ]);
+      setProducts(prodRes.data ?? []);
+      if (itemRes.data) {
+        setItems(itemRes.data.map((i: any) => ({ product_id: i.product_id, product_name: i.product?.name ?? 'Unknown', quantity: i.quantity })));
+      }
+    };
+    fetchData();
+  }, [bundle]);
+
+  const regPrice = parseFloat(form.regular_price) || 0;
+  const bundlePrice = parseFloat(form.bundle_price) || 0;
+  const discount = regPrice > 0 ? Math.max(0, Math.round(((regPrice - bundlePrice) / regPrice) * 100)) : 0;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({ title: 'Invalid file type', description: 'Please upload a JPEG, PNG, or WebP image.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 5 MB.', variant: 'destructive' });
+      return;
+    }
+    if (previewUrl && !previewUrl.startsWith('http')) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const addItem = () => {
+    if (!selectedProductId || items.some(i => i.product_id === selectedProductId)) return;
+    const p = products.find(p => p.id === selectedProductId);
+    if (p) setItems([...items, { product_id: p.id, product_name: p.name, quantity: 1 }]);
+    setSelectedProductId('');
+  };
+
+  const removeItem = (pid: string) => setItems(items.filter(i => i.product_id !== pid));
+
+  const updateItemQty = (pid: string, qty: number) => {
+    const q = Math.max(1, qty);
+    setItems(items.map(i => i.product_id === pid ? { ...i, quantity: q } : i));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const reg = parseFloat(form.regular_price);
+    const bun = parseFloat(form.bundle_price);
+    if (reg < 0 || bun < 0 || bun > reg) {
+      toast({ title: 'Invalid pricing', variant: 'destructive' });
+      return;
+    }
+    if (items.length === 0) {
+      toast({ title: 'Must add at least one item', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+    let imageUrl = form.image_url.trim() || null;
+
+    const payload = {
+      name: form.name.trim(),
+      slug: form.slug.trim(),
+      description: form.description.trim() || null,
+      regular_price: reg,
+      bundle_price: bun,
+      discount_percentage: discount,
+      image_url: imageUrl,
+      badge: form.badge || null,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+      active: form.active,
+    };
+
+    let bundleId = bundle?.id;
+    if (bundle) {
+      const { error } = await supabase.from('bundles').update(payload).eq('id', bundle.id);
+      if (error) { toast({ title: 'Update failed', variant: 'destructive' }); setSaving(false); return; }
+      await supabase.from('bundle_items').delete().eq('bundle_id', bundle.id);
+    } else {
+      const { data, error } = await supabase.from('bundles').insert(payload).select('id').single();
+      if (error || !data) { toast({ title: 'Creation failed', variant: 'destructive' }); setSaving(false); return; }
+      bundleId = data.id;
+    }
+
+    if (selectedFile && bundleId) {
+      try {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `bundles/${bundleId}/${crypto.randomUUID()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('product-images').upload(fileName, selectedFile);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(fileName);
+        await supabase.from('bundles').update({ image_url: publicUrl }).eq('id', bundleId);
+      } catch (err: any) {
+        setSaving(false);
+        toast({ title: 'Image upload failed', description: err.message, variant: 'destructive' });
+        return;
+      }
+    }
+
+    const { error: itemError } = await supabase.from('bundle_items').insert(items.map(i => ({ bundle_id: bundleId, product_id: i.product_id, quantity: i.quantity })));
+    if (itemError) { toast({ title: 'Items could not be saved', variant: 'destructive' }); setSaving(false); return; }
+
+    setSaving(false);
+    toast({ title: bundle ? 'Bundle updated' : 'Bundle created' });
+    onSaved();
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+        <DialogHeader><DialogTitle>{bundle ? 'Edit Bundle' : 'Add Bundle'}</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div><Label htmlFor="name">Name *</Label><Input id="name" name="name" value={form.name} onChange={handleChange} required /></div>
+          <div><Label htmlFor="slug">Slug *</Label><Input id="slug" name="slug" value={form.slug} onChange={handleChange} required /></div>
+          <div><Label htmlFor="description">Description</Label><Textarea id="description" name="description" value={form.description} onChange={handleChange} /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Image</Label>
+              <div className="mt-1.5 flex flex-col gap-3">
+                {previewUrl ? (
+                  <div className="flex items-center gap-4">
+                    <img src={previewUrl} alt="Preview" className="h-16 w-16 rounded-lg object-cover" />
+                    <Button type="button" variant="outline" size="sm" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}>Clear</Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" asChild><label>Choose Image<input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} /></label></Button>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="badge">Badge</Label>
+              <Select value={form.badge ?? 'None'} onValueChange={(val) => setForm(f => ({ ...f, badge: val === 'None' ? null : val }))}>
+                <SelectTrigger><SelectValue placeholder="Select a badge" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="None">None</SelectItem>
+                  <SelectItem value="Best Seller">Best Seller</SelectItem>
+                  <SelectItem value="Popular">Popular</SelectItem>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Limited">Limited</SelectItem>
+                  <SelectItem value="Sale">Sale</SelectItem>
+                  <SelectItem value="Bundle">Bundle</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><Label htmlFor="start_date">Start Date</Label><Input type="date" id="start_date" name="start_date" value={form.start_date ? form.start_date.split('T')[0] : ''} onChange={handleChange} /></div>
+            <div><Label htmlFor="end_date">End Date</Label><Input type="date" id="end_date" name="end_date" value={form.end_date ? form.end_date.split('T')[0] : ''} onChange={handleChange} /></div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div><Label>Reg Price</Label><Input type="number" name="regular_price" value={form.regular_price} onChange={handleChange} /></div>
+            <div><Label>Bundle Price</Label><Input type="number" name="bundle_price" value={form.bundle_price} onChange={handleChange} /></div>
+            <div><Label>Discount %</Label><Input value={discount + '%'} readOnly disabled /></div>
+          </div>
+          <div><Label>Items</Label>
+            <div className="flex gap-2 mb-2"><Select value={selectedProductId} onValueChange={setSelectedProductId}><SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger><SelectContent>{products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><Button type="button" onClick={addItem}>Add</Button></div>
+            <ul className="space-y-2">{items.map(i => <li key={i.product_id} className="flex gap-2 items-center text-sm">{i.product_name}<Input type="number" className="w-16" value={i.quantity} onChange={(e) => updateItemQty(i.product_id, parseInt(e.target.value))} /><Button type="button" variant="ghost" onClick={() => removeItem(i.product_id)}><Trash2 className="h-4 w-4" /></Button></li>)}</ul>
+          </div>
+          <DialogFooter><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={saving}>Save</Button></DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

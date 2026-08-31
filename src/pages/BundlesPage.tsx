@@ -105,15 +105,23 @@ export function BundlesPage() {
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true, margin: '-80px' }}
-                  className={`group grid items-center gap-6 overflow-hidden rounded-3xl border border-border/60 bg-card p-6 shadow-card transition-all duration-300 hover:shadow-elevated sm:p-8 lg:grid-cols-2 lg:gap-10 ${
+                                    className={`group grid items-center gap-6 overflow-hidden rounded-3xl border border-border/60 bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated sm:p-8 lg:grid-cols-2 lg:gap-10 ${
                     i % 2 === 1 ? 'lg:[&>div:first-child]:order-2' : ''
                   }`}
                 >
                   <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-surface to-secondary/20">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="flex h-20 w-20 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                        <Gift className="h-10 w-10" aria-hidden="true" />
-                      </span>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                      {bundle.image_url ? (
+                        <img
+                          src={bundle.image_url}
+                          alt={bundle.name}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                          <Gift className="h-10 w-10" aria-hidden="true" />
+                        </span>
+                      )}
                     </div>
                     {isOnSale && (
                       <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft">
@@ -127,14 +135,37 @@ export function BundlesPage() {
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <h3 className="font-heading text-2xl font-semibold text-foreground">
+                                        <h3 className="font-heading text-2xl font-semibold text-foreground">
                       {bundle.name}
                     </h3>
+                    {bundle.start_date && bundle.end_date ? (
+                      <p className="mt-2 text-sm font-medium text-secondary">
+                        Available {new Date(bundle.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – {new Date(bundle.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    ) : bundle.start_date ? (
+                      <p className="mt-2 text-sm font-medium text-secondary">
+                        Available from {new Date(bundle.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    ) : bundle.end_date ? (
+                      <p className="mt-2 text-sm font-medium text-secondary">
+                        Available until {new Date(bundle.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    ) : null}
                     {bundle.description && (
                       <p className="mt-3 text-base leading-relaxed text-muted-foreground">
                         {bundle.description}
                       </p>
                     )}
+                    <div className="mt-4 flex flex-col gap-2">
+                      <p className="text-sm font-semibold text-foreground">Includes:</p>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        {bundle.bundle_items?.map((item) => (
+                          <li key={item.id}>
+                            {item.product?.name} &times; {item.quantity}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                     <div className="mt-4 flex items-baseline gap-3">
                       <span className="font-heading text-2xl font-semibold text-primary">
                         {formatPrice(bundle.bundle_price)}
