@@ -497,16 +497,30 @@ export function CheckoutPage() {
                   Order Summary
                 </h2>
 
-                <ul className="mt-6 space-y-4">
-                  {items.map((item) => {
-                    const price =
-                      item.product.sale_price ??
-                      item.product.price;
+
+
+                                <ul className="mt-6 space-y-4">
+                                    {items.map((item) => {
+                    const bundle = item.item_type === 'bundle' ? item.bundle : null;
+                    const product =
+                      item.item_type === 'product' ? item.product : null;
+
+                    const price = bundle
+                      ? bundle.bundle_price
+                      : product
+                        ? (product.sale_price ?? product.price)
+                        : 0;
+
+                    const name = bundle
+                      ? bundle.name
+                      : product
+                        ? product.name
+                        : 'Unknown Item';
 
                     return (
                       <li
                         key={item.id}
-                        className="flex items-center gap-3"
+                        className="flex items-start gap-3"
                       >
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface text-primary">
                           <ShoppingBag
@@ -517,18 +531,28 @@ export function CheckoutPage() {
 
                         <div className="flex-1">
                           <p className="text-sm font-medium text-foreground">
-                            {item.product.name}
+                            {name}
                           </p>
 
                           <p className="text-xs text-muted-foreground">
                             Qty: {item.quantity}
                           </p>
+
+                          {bundle?.items && (
+                            <p className="mt-1 text-[10px] text-muted-foreground">
+                              Includes:{' '}
+                              {bundle.items
+                                .map(
+                                  (bi) =>
+                                    `${bi.product?.name ?? 'Product'} × ${bi.quantity}`,
+                                )
+                                .join(', ')}
+                            </p>
+                          )}
                         </div>
 
                         <span className="text-sm font-semibold text-foreground">
-                          {formatPrice(
-                            Number(price) * item.quantity,
-                          )}
+                          {formatPrice(Number(price) * item.quantity)}
                         </span>
                       </li>
                     );

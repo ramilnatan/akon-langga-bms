@@ -59,6 +59,7 @@ export interface Bundle {
   created_at: string;
   updated_at: string;
   bundle_items?: BundleItem[];
+  items?: BundleItem[];
 }
 
 export interface CartProduct {
@@ -66,20 +67,22 @@ export interface CartProduct {
   name: string;
   price: number;
   sale_price: number | null;
+  featured_image_url: string | null;
 }
 
 export interface CartItem {
   id: string;
   session_id: string;
-  product_id: string;
+  product_id: string | null;
+  bundle_id: string | null;
   quantity: number;
   created_at: string;
-  product?: Product;
+  item_type: 'product' | 'bundle';
+  product: CartProduct | null;
+  bundle: Bundle | null;
 }
 
-export interface CartItemWithProduct extends Omit<CartItem, 'product'> {
-  product: CartProduct;
-}
+export type CartItemWithProduct = CartItem;
 
 export interface Order {
   id: string;

@@ -65,51 +65,125 @@ export function CartDrawer() {
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <ul className="space-y-4">
                 {items.map((item) => {
-                  const price = item.product.sale_price ?? item.product.price;
-                  return (
-                    <li key={item.id} className="flex gap-3">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-surface text-primary">
-                        <ShoppingBag className="h-6 w-6" aria-hidden="true" />
-                      </div>
-                      <div className="flex flex-1 flex-col">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{item.product.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatPrice(price)} each</p>
-                          </div>
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="text-muted-foreground transition-colors hover:text-destructive"
-                            aria-label={`Remove ${item.product.name}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                  if (item.item_type === 'product' && item.product) {
+                    const product = item.product;
+                    const price = product.sale_price ?? product.price;
+                    return (
+                      <li key={item.id} className="flex gap-3">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-surface text-primary">
+                          {product.featured_image_url ? (
+                            <img src={product.featured_image_url} alt={product.name} className="h-full w-full rounded-xl object-cover" />
+                          ) : (
+                            <ShoppingBag className="h-6 w-6" aria-hidden="true" />
+                          )}
                         </div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="flex items-center rounded-full border border-border">
+                        <div className="flex flex-1 flex-col">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{product.name}</p>
+                              <p className="text-xs text-muted-foreground">{formatPrice(price)} each</p>
+                            </div>
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              className="flex h-7 w-7 items-center justify-center text-foreground/70 hover:text-primary"
-                              aria-label="Decrease quantity"
+                              onClick={() => removeItem(item.id)}
+                              className="text-muted-foreground transition-colors hover:text-destructive"
+                              aria-label={`Remove ${product.name}`}
                             >
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                            <button
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="flex h-7 w-7 items-center justify-center text-foreground/70 hover:text-primary"
-                              aria-label="Increase quantity"
-                            >
-                              <Plus className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
-                          <span className="text-sm font-semibold text-foreground">
-                            {formatPrice(price * item.quantity)}
-                          </span>
+                          <div className="mt-2 flex items-center justify-between">
+                            <div className="flex items-center rounded-full border border-border">
+                              <button
+                                onClick={() => updateQuantity(item.id, item.item_type, item.quantity - 1)}
+                                className="flex h-7 w-7 items-center justify-center text-foreground/70 hover:text-primary"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </button>
+                              <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                              <button
+                                onClick={() => updateQuantity(item.id, item.item_type, item.quantity + 1)}
+                                className="flex h-7 w-7 items-center justify-center text-foreground/70 hover:text-primary"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <span className="text-sm font-semibold text-foreground">
+                              {formatPrice(price * item.quantity)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  );
+                      </li>
+                    );
+                  } else if (item.item_type === 'bundle' && item.bundle) {
+                    const price = item.bundle.bundle_price;
+                    return (
+                      <li key={item.id} className="flex flex-col gap-3 rounded-lg border border-border/50 bg-surface/50 p-3">
+                        <div className="flex gap-3">
+                          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-surface text-primary">
+                            {item.bundle.image_url ? (
+                              <img src={item.bundle.image_url} alt={item.bundle.name} className="h-full w-full rounded-xl object-cover" />
+                            ) : (
+                              <ShoppingBag className="h-6 w-6" aria-hidden="true" />
+                            )}
+                          </div>
+                          <div className="flex flex-1 flex-col">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{item.bundle.name}</p>
+                                {item.bundle.badge && <p className="text-[10px] font-bold text-primary uppercase">{item.bundle.badge}</p>}
+                                <p className="text-xs text-muted-foreground">{formatPrice(price)} each</p>
+                              </div>
+                              <button
+                                onClick={() => removeItem(item.id)}
+                                className="text-muted-foreground transition-colors hover:text-destructive"
+                                aria-label={`Remove ${item.bundle.name}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="flex items-center rounded-full border border-border">
+                                <button
+                                  onClick={() => updateQuantity(item.id, item.item_type, item.quantity - 1)}
+                                  className="flex h-7 w-7 items-center justify-center text-foreground/70 hover:text-primary"
+                                  aria-label="Decrease quantity"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                                <button
+                                  onClick={() => updateQuantity(item.id, item.item_type, item.quantity + 1)}
+                                  className="flex h-7 w-7 items-center justify-center text-foreground/70 hover:text-primary"
+                                  aria-label="Increase quantity"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              </div>
+                              <span className="text-sm font-semibold text-foreground">
+                                {formatPrice(price * item.quantity)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        {item.bundle.items && item.bundle.items.length > 0 && (
+                          <div className="mt-1 border-t border-border/50 pt-2 text-xs text-muted-foreground">
+                            <p className="font-medium">Includes:</p>
+                            <p>
+                              {item.bundle.items.map((bItem, idx) => (
+                                <span key={bItem.id}>
+                                  {bItem.product?.name ?? 'Unknown Product'} × {bItem.quantity}
+                                  {idx < item.bundle!.items!.length - 1 ? ', ' : ''}
+                                </span>
+                              ))}
+                            </p>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  }
+                  return null;
                 })}
               </ul>
             </div>

@@ -12,7 +12,8 @@ interface CartContextValue {
   subtotal: number;
   sessionId: string | null;
   addToCart: (productId: string, quantity?: number) => Promise<{ error: string | null }>;
-  updateQuantity: (itemId: string, quantity: number) => Promise<{ error: string | null }>;
+  addBundleToCart: (bundleId: string, quantity?: number) => Promise<{ error: string | null }>;
+  updateQuantity: (itemId: string, itemType: 'product' | 'bundle', quantity: number) => Promise<{ error: string | null }>;
   removeItem: (itemId: string) => Promise<{ error: string | null }>;
   clearCart: () => Promise<void>;
   refreshCart: () => Promise<void>;
@@ -65,10 +66,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return created.session_id;
   }, []);
 
-  const fetchCartItems = useCallback(async (sid: string) => {
+    const fetchCartItems = useCallback(async (sid: string) => {
     const { data, error } = user
-      ? await supabase.rpc('get_user_cart_items')
-      : await supabase.rpc('get_guest_cart_items', {
+      ? await supabase.rpc('get_user_cart_items_with_bundles')
+      : await supabase.rpc('get_guest_cart_items_with_bundles', {
           p_session_id: sid,
         });
 
@@ -77,23 +78,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const typed = ((data ?? []) as Array<{
-      id: string;
-      session_id: string;
-      product_id: string;
-      quantity: number;
-      created_at: string;
-      product: CartItemWithProduct['product'] | CartItemWithProduct['product'][];
-    }>).map((row) => ({
-      id: row.id,
-      session_id: row.session_id,
-      product_id: row.product_id,
-      quantity: row.quantity,
-      created_at: row.created_at,
-      product: Array.isArray(row.product) ? row.product[0] : row.product,
-    })) as CartItemWithProduct[];
-
-    setItems(typed);
+    setItems((data ?? []) as CartItemWithProduct[]);
   }, [user]);
 
   const refreshCart = useCallback(async () => {
@@ -156,7 +141,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
-  const updateQuantity = async (itemId: string, quantity: number): Promise<{ error: string | null }> => {
+    const addBundleToCart = async (bundleId: string, quantity = 1): Promise<{ error: string | null }> => {
+    let sid = sessionId;
+    if (!sid) {
+      sid = user ? await ensureAuthSession(user.id) : await ensureGuestSession();
+      setSessionId(sid);
+    }
+    if (!sid) return { error: 'Could not initialize cart. Please try again.' };
+
+    const { error } = user
+      ? await supabase.rpc('add_user_bundle_to_cart', {
+          p_bundle_id: bundleId,
+          p_quantity: quantity,
+        })
+      : await supabase.rpc('add_guest_bundle_to_cart', {
+          p_session_id: sid,
+          p_bundle_id: bundleId,
+          p_quantity: quantity,
+        });
+
+    if (error) {
+      return { error: 'Could not add bundle to cart. Please try again.' };
+    }
+
+    await fetchCartItems(sid);
+    return { error: null };
+  };
+
+  const updateQuantity = async (itemId: string, itemType: 'product' | 'bundle', quantity: number): Promise<{ error: string | null }> => {
     if (quantity <= 0) {
       return removeItem(itemId);
     }
@@ -164,15 +176,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!sessionId) return { error: 'Could not initialize cart. Please try again.' };
 
     const { error } = user
-      ? await supabase.rpc('update_user_cart_item', {
-          p_item_id: itemId,
-          p_quantity: quantity,
-        })
-      : await supabase.rpc('update_guest_cart_item', {
-          p_session_id: sessionId,
-          p_item_id: itemId,
-          p_quantity: quantity,
-        });
+      ? itemType === 'product'
+        ? await supabase.rpc('update_user_cart_item', {
+            p_item_id: itemId,
+            p_quantity: quantity,
+          })
+        : await supabase.rpc('update_user_bundle_cart_item', {
+            p_item_id: itemId,
+            p_quantity: quantity,
+          })
+      : itemType === 'product'
+        ? await supabase.rpc('update_guest_cart_item', {
+            p_session_id: sessionId,
+            p_item_id: itemId,
+            p_quantity: quantity,
+          })
+        : await supabase.rpc('update_guest_bundle_cart_item', {
+            p_session_id: sessionId,
+            p_item_id: itemId,
+            p_quantity: quantity,
+          });
 
     if (error) return { error: 'Could not update quantity. Please try again.' };
 
@@ -204,9 +227,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   };
 
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => {
-    const price = item.product.sale_price ?? item.product.price;
+    let price = 0;
+    if (item.item_type === 'product' && item.product) {
+      price = item.product.sale_price ?? item.product.price;
+    } else if (item.item_type === 'bundle' && item.bundle) {
+      price = item.bundle.bundle_price;
+    }
     return sum + price * item.quantity;
   }, 0);
 
@@ -219,6 +247,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         subtotal,
         sessionId,
         addToCart,
+        addBundleToCart,
         updateQuantity,
         removeItem,
         clearCart,

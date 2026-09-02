@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { Gift, ShoppingBag, PackageOpen } from 'lucide-react';
+import { Gift, PackageOpen, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Section } from '@/components/layout/Section';
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/services';
 import type { Bundle } from '@/types';
+import { useCart } from '@/hooks/use-cart';
+import { useToast } from '@/hooks/use-toast';
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
@@ -28,6 +30,9 @@ export function BundlesPage() {
     const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { addBundleToCart } = useCart();
+  const { toast } = useToast();
+  const [addingId, setAddingId] = useState<string | null>(null);
 
     useEffect(() => {
     const fetchBundles = async () => {
@@ -166,15 +171,46 @@ export function BundlesPage() {
                         ))}
                       </ul>
                     </div>
-                    <div className="mt-4 flex items-baseline gap-3">
-                      <span className="font-heading text-2xl font-semibold text-primary">
-                        {formatPrice(bundle.bundle_price)}
-                      </span>
-                      {isOnSale && (
-                        <span className="text-lg text-muted-foreground line-through">
-                          {formatPrice(bundle.regular_price)}
+                                        <div className="mt-4 flex items-center justify-between gap-3">
+                      <div className="flex items-baseline gap-3">
+                        <span className="font-heading text-2xl font-semibold text-primary">
+                          {formatPrice(bundle.bundle_price)}
                         </span>
-                      )}
+                        {isOnSale && (
+                          <span className="text-lg text-muted-foreground line-through">
+                            {formatPrice(bundle.regular_price)}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          setAddingId(bundle.id);
+                          const { error } = await addBundleToCart(bundle.id, 1);
+                          setAddingId(null);
+                          if (error) {
+                            toast({
+                              title: 'Error',
+                              description: error,
+                              variant: 'destructive',
+                            });
+                          } else {
+                            toast({
+                              title: 'Added to cart',
+                              description: `${bundle.name} has been added to your cart.`,
+                            });
+                          }
+                        }}
+                        disabled={addingId === bundle.id}
+                        className="rounded-full"
+                        aria-label={`Add ${bundle.name} to cart`}
+                      >
+                        {addingId === bundle.id ? (
+                          <LoadingSpinner size="sm" className="mr-2" />
+                        ) : (
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                        )}
+                        Add to Cart
+                      </Button>
                     </div>
                   </div>
                 </motion.article>
