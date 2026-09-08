@@ -523,10 +523,24 @@ export function CheckoutPage() {
                         className="flex items-start gap-3"
                       >
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface text-primary">
-                          <ShoppingBag
-                            className="h-5 w-5"
-                            aria-hidden="true"
-                          />
+                          {product?.featured_image_url ? (
+                            <img
+                              src={product.featured_image_url}
+                              alt={name}
+                              className="h-full w-full rounded-xl object-cover"
+                            />
+                          ) : bundle?.image_url ? (
+                            <img
+                              src={bundle.image_url}
+                              alt={name}
+                              className="h-full w-full rounded-xl object-cover"
+                            />
+                          ) : (
+                            <ShoppingBag
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
+                          )}
                         </div>
 
                         <div className="flex-1">

@@ -313,6 +313,12 @@ function OrdersTab() {
   const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderBundleItems, setOrderBundleItems] = useState<{
+    id: string;
+    bundle_name_snapshot: string;
+    bundle_price_snapshot: number;
+    bundle_quantity: number;
+  }[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
 
   const fetchOrders = useCallback(async () => {
@@ -334,18 +340,32 @@ function OrdersTab() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const updateStatus = async (orderId: string, status: Order['status']) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', orderId);
+    const updateStatus = async (orderId: string, status: Order['status']) => {
+    if (status === 'cancelled') {
+      const { error } = await supabase.rpc('cancel_order', {
+        p_order_id: orderId,
+      });
 
-    if (error) {
-      toast({ title: 'Could not update order status', variant: 'destructive' });
-      return;
+      if (error) {
+        toast({ title: 'Could not cancel order', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Order cancelled and stock restored' });
+    } else {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+
+      if (error) {
+        toast({ title: 'Could not update order status', description: error.message, variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: 'Order status updated' });
     }
 
-    toast({ title: 'Order status updated' });
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
     if (selectedOrder?.id === orderId) {
       setSelectedOrder((prev) => (prev ? { ...prev, status } : null));
@@ -355,12 +375,13 @@ function OrdersTab() {
   const viewOrder = async (order: Order) => {
     setSelectedOrder(order);
     setItemsLoading(true);
-    const { data } = await supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', order.id);
+    const [itemsRes, bundleRes] = await Promise.all([
+      supabase.from('order_items').select('*').eq('order_id', order.id),
+      supabase.from('order_bundle_items').select('*').eq('order_id', order.id)
+    ]);
 
-    setOrderItems(data ?? []);
+    setOrderItems(itemsRes.data ?? []);
+    setOrderBundleItems(bundleRes.data ?? []);
     setItemsLoading(false);
   };
 
@@ -483,11 +504,27 @@ function OrdersTab() {
                         <span className="font-medium text-foreground">{formatPrice(item.line_total)}</span>
                       </li>
                     ))}
+                    {orderBundleItems.map((item) => (
+                      <li key={item.id} className="flex justify-between text-sm">
+                        <span className="text-foreground">{item.bundle_name_snapshot} × {item.bundle_quantity}</span>
+                        <span className="font-medium text-foreground">{formatPrice(item.bundle_price_snapshot * item.bundle_quantity)}</span>
+                      </li>
+                    ))}
                   </ul>
                 )}
-                <div className="mt-3 flex justify-between border-t border-border pt-3">
-                  <span className="font-heading font-semibold text-foreground">Total</span>
-                  <span className="font-heading font-semibold text-primary">{formatPrice(selectedOrder.total)}</span>
+                                <div className="mt-3 space-y-1 border-t border-border pt-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-foreground">{formatPrice(selectedOrder.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping Fee</span>
+                    <span className="text-foreground">{formatPrice(selectedOrder.shipping_fee)}</span>
+                  </div>
+                  <div className="flex justify-between pt-2">
+                    <span className="font-heading font-semibold text-foreground">Total</span>
+                    <span className="font-heading font-semibold text-primary">{formatPrice(selectedOrder.total)}</span>
+                  </div>
                 </div>
               </div>
 

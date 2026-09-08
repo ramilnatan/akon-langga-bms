@@ -89,6 +89,8 @@ export interface Order {
   user_id: string | null;
   guest_session_id: string | null;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  subtotal: number;
+  shipping_fee: number;
   total: number;
   customer_name: string;
   customer_email: string;
