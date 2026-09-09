@@ -23,7 +23,7 @@ import { Section } from '@/components/layout/Section';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BRAND } from '@/constants';
+import { useStoreSettings } from '@/context/StoreSettingsContext';
 
 const testimonials = [
   {
@@ -115,6 +115,7 @@ const fadeUp = {
 export function HomePage() {
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
   const [activeBundle, setActiveBundle] = useState<Bundle | null>(null);
+  const { settings } = useStoreSettings();
 
   useEffect(() => {
     async function fetchCategories() {
@@ -163,15 +164,15 @@ export function HomePage() {
   return (
     <>
       <Helmet>
-        <title>{BRAND.name} — {BRAND.tagline}</title>
-        <meta name="description" content={BRAND.description} />
+        <title>{settings.store_name} — {settings.tagline}</title>
+        <meta name="description" content={settings.seo_description || "An organic wellness brand offering herbal coffee, natural handmade skincare, and holistic self-care essentials."} />
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content={BRAND.name} />
-        <meta property="og:title" content={`${BRAND.name} — ${BRAND.tagline}`} />
-        <meta property="og:description" content={BRAND.description} />
+        <meta property="og:site_name" content={settings.store_name} />
+        <meta property="og:title" content={`${settings.store_name} — ${settings.tagline}`} />
+        <meta property="og:description" content={settings.seo_description || "An organic wellness brand offering herbal coffee, natural handmade skincare, and holistic self-care essentials."} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${BRAND.name} — ${BRAND.tagline}`} />
-        <meta name="twitter:description" content={BRAND.description} />
+        <meta name="twitter:title" content={`${settings.store_name} — ${settings.tagline}`} />
+        <meta name="twitter:description" content={settings.seo_description || "An organic wellness brand offering herbal coffee, natural handmade skincare, and holistic self-care essentials."} />
       </Helmet>
 
       {/* Hero Section */}
@@ -200,7 +201,7 @@ export function HomePage() {
                 <span className="block text-primary">Glow on the Outside.</span>
               </h1>
               <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground text-balance">
-                Discover handcrafted herbal coffee and natural handmade skincare created with care by AKON LANGGA to support everyday wellness.
+                Discover handcrafted herbal coffee and natural handmade skincare created with care by {settings.store_name} to support everyday wellness.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="rounded-full shadow-soft">
@@ -590,7 +591,7 @@ export function HomePage() {
                 <Mail className="h-7 w-7" aria-hidden="true" />
               </span>
               <h2 className="mt-6 font-heading text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-                Join the AKON LANGGA Community
+                Join the {settings.store_name} Community
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground text-balance">
                 Receive wellness tips, product launches, and exclusive offers.

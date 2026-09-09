@@ -1,11 +1,12 @@
 import { Outlet, Link } from 'react-router-dom';
 import { Leaf, ArrowLeft } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
-import { BRAND } from '@/constants';
+import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { useAuth } from '@/hooks/use-auth';
 
 export function AdminLayout() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { settings } = useStoreSettings();
 
   return (
     <div className="flex min-h-screen flex-col bg-surface">
@@ -17,7 +18,7 @@ export function AdminLayout() {
                 <Leaf className="h-4 w-4" aria-hidden="true" />
               </span>
               <span className="font-heading text-base font-semibold text-foreground">
-                {BRAND.name} · Admin
+                {settings.store_name} · Admin
               </span>
             </div>
             <div className="flex items-center gap-3">

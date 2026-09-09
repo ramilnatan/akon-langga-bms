@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 import { useCart } from '@/hooks/use-cart';
 import { useAuth } from '@/hooks/use-auth';
+import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { supabase } from '@/services';
 import { toast } from '@/hooks/use-toast';
 
@@ -36,10 +37,11 @@ type PlaceOrderResult = {
 export function CheckoutPage() {
   const { items, subtotal, sessionId, loading, refreshCart } = useCart();
   const { user } = useAuth();
+  const { settings, loading: settingsLoading } = useStoreSettings();
 
   const [submitting, setSubmitting] = useState(false);
-  const [shippingFee, setShippingFee] = useState(0);
-  const [shippingLoading, setShippingLoading] = useState(true);
+  const shippingFee = settings.shipping_fee;
+  const shippingLoading = settingsLoading;
   const [orderResult, setOrderResult] = useState<PlaceOrderResult | null>(null);
 
   const [form, setForm] = useState({
@@ -49,53 +51,6 @@ export function CheckoutPage() {
     address: '',
     notes: '',
   });
-
-  /*
-   * Load the current store shipping fee.
-   *
-   * The admin controls this value through store_settings.
-   * The RPC independently reads the same value when the order
-   * is actually created.
-   */
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadShippingFee = async () => {
-      setShippingLoading(true);
-
-      const { data, error } = await supabase
-        .from('store_settings')
-        .select('shipping_fee')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      if (error) {
-        console.error('Failed to load shipping fee:', error);
-
-        toast({
-          title: 'Shipping fee unavailable',
-          description:
-            'We could not load the current shipping fee. Please try again.',
-          variant: 'destructive',
-        });
-
-        setShippingFee(0);
-      } else {
-        setShippingFee(Number(data?.shipping_fee ?? 0));
-      }
-
-      setShippingLoading(false);
-    };
-
-    loadShippingFee();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,

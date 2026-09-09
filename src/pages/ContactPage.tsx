@@ -1,22 +1,23 @@
+import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { Helmet } from 'react-helmet-async';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Section } from '@/components/layout/Section';
 import { Container } from '@/components/layout/Container';
-import { BRAND } from '@/constants';
-
-const details = [
-  { icon: Mail, label: 'Email', value: BRAND.email },
-  { icon: Phone, label: 'Phone', value: BRAND.phone },
-  { icon: MapPin, label: 'Location', value: BRAND.address },
-];
 
 export function ContactPage() {
+  const { settings } = useStoreSettings();
+  const details = [
+    { icon: Mail, label: 'Email', value: settings.email },
+    { icon: Phone, label: 'Phone', value: settings.primary_phone },
+    { icon: MapPin, label: 'Location', value: settings.address },
+  ];
+
   return (
     <>
       <Helmet>
-        <title>Contact — AKON LANGGA</title>
-        <meta name="description" content="Get in touch with the AKON LANGGA team." />
+        <title>Contact — {settings.store_name}</title>
+        <meta name="description" content={`Get in touch with the ${settings.store_name} team.`} />
       </Helmet>
       <PageHeader
         eyebrow="Say Hello"

@@ -3,7 +3,8 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Leaf } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { PRIMARY_NAV, BRAND } from '@/constants';
+import { PRIMARY_NAV } from '@/constants';
+import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { Container } from '@/components/layout/Container';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,6 +14,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
+  const { settings } = useStoreSettings();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -41,12 +43,12 @@ export function Navbar() {
     >
       <Container>
         <nav className="flex h-16 items-center justify-between sm:h-20" aria-label="Primary">
-          <Link to="/" className="flex items-center gap-2.5" aria-label={`${BRAND.name} home`}>
+          <Link to="/" className="flex items-center gap-2.5" aria-label={`${settings.store_name} home`}>
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Leaf className="h-5 w-5" aria-hidden="true" />
             </span>
             <span className="font-heading text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {BRAND.name}
+              {settings.store_name}
             </span>
           </Link>
 

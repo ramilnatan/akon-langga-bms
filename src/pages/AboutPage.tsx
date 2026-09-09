@@ -1,10 +1,10 @@
+import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Leaf, Heart, Sparkles } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Section } from '@/components/layout/Section';
 import { Container } from '@/components/layout/Container';
-import { BRAND } from '@/constants';
 
 const values = [
   { icon: Leaf, title: 'Organic', description: 'Naturally sourced ingredients, free from harsh chemicals.' },
@@ -13,16 +13,17 @@ const values = [
 ];
 
 export function AboutPage() {
+  const { settings } = useStoreSettings();
   return (
     <>
       <Helmet>
-        <title>About — AKON LANGGA</title>
-        <meta name="description" content="The story behind AKON LANGGA — organic wellness, herbal coffee, and natural handmade skincare." />
+        <title>About — {settings.store_name}</title>
+        <meta name="description" content={settings.seo_description || "The story behind AKON LANGGA — organic wellness, herbal coffee, and natural handmade skincare."} />
       </Helmet>
       <PageHeader
         eyebrow="Our Story"
-        title="About AKON LANGGA"
-        description={BRAND.description}
+        title={`About ${settings.store_name}`}
+        description="An organic wellness brand offering herbal coffee, natural handmade skincare, and holistic self-care essentials."
       />
       <Section spacing="lg">
         <Container>

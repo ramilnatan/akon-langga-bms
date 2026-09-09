@@ -1,47 +1,48 @@
 import { Link } from 'react-router-dom';
-import { Leaf, Instagram, Facebook, Youtube, Music2 } from 'lucide-react';
+import { Leaf, Facebook, MessageCircle, Phone } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
-import { BRAND, COPYRIGHT, FOOTER_LINKS, SOCIAL_LINKS } from '@/constants';
-
-const socialIcon = {
-  instagram: Instagram,
-  facebook: Facebook,
-  tiktok: Music2,
-  youtube: Youtube,
-} as const;
+import { useStoreSettings } from '@/context/StoreSettingsContext';
+import { COPYRIGHT, FOOTER_LINKS } from '@/constants';
 
 export function Footer() {
+  const { settings } = useStoreSettings();
+
+  const socialLinks = [
+    { label: 'Facebook', href: settings.facebook_url, icon: Facebook },
+    { label: 'Messenger', href: settings.messenger_url, icon: MessageCircle },
+    { label: 'WhatsApp', href: settings.whatsapp, icon: Phone },
+  ].filter((s) => s.href);
+
   return (
     <footer className="border-t border-border bg-surface">
       <Container>
         <div className="grid gap-12 py-16 sm:py-20 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-2.5" aria-label={`${BRAND.name} home`}>
+            <Link to="/" className="flex items-center gap-2.5" aria-label={`${settings.store_name} home`}>
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <Leaf className="h-5 w-5" aria-hidden="true" />
               </span>
               <span className="font-heading text-lg font-semibold text-foreground">
-                {BRAND.name}
+                {settings.store_name}
               </span>
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              {BRAND.tagline}
+              {settings.tagline}
             </p>
             <ul className="mt-6 flex gap-3">
-              {SOCIAL_LINKS.map((social) => {
-                const Icon = socialIcon[social.icon];
-                return (
-                  <li key={social.label}>
-                    <a
-                      href={social.href}
-                      aria-label={social.label}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground/70 transition-colors hover:border-primary hover:text-primary"
-                    >
-                      <Icon className="h-4 w-4" aria-hidden="true" />
-                    </a>
-                  </li>
-                );
-              })}
+              {socialLinks.map((social) => (
+                <li key={social.label}>
+                  <a
+                    href={social.href as string}
+                    aria-label={social.label}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground/70 transition-colors hover:border-primary hover:text-primary"
+                  >
+                    <social.icon className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -96,7 +97,7 @@ export function Footer() {
           <div className="mt-6 flex flex-col items-center justify-between gap-2 border-t border-border/60 pt-6 sm:flex-row">
             <p className="text-xs text-muted-foreground">{COPYRIGHT}</p>
             <p className="text-xs text-muted-foreground">
-              {BRAND.category}
+              Organic Wellness · Herbal Coffee · Natural Handmade Skincare
             </p>
           </div>
         </div>

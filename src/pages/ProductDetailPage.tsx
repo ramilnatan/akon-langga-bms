@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/services";
 import { useCart } from "@/hooks/use-cart";
+import { useStoreSettings } from "@/context/StoreSettingsContext";
 import { toast } from "@/hooks/use-toast";
 import type { Product } from "@/types";
 
@@ -46,6 +47,7 @@ export function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const { addToCart, items, updateQuantity } = useCart();
+  const { settings } = useStoreSettings();
 
   useEffect(() => {
     if (!slug) return;
@@ -98,7 +100,7 @@ export function ProductDetailPage() {
     let error: string | null = null;
 
     if (existingItem) {
-      const res = await updateQuantity(existingItem.id, quantity);
+      const res = await updateQuantity(existingItem.id, "product", quantity);
       error = res.error;
     } else {
       const res = await addToCart(product.id, quantity);
@@ -141,7 +143,7 @@ export function ProductDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{product.name} — AKON LANGGA</title>
+        <title>{product.name} — {settings.store_name}</title>
         <meta name="description" content={product.meta_description ?? product.full_description ?? product.name} />
       </Helmet>
       <Section spacing="md">
