@@ -189,7 +189,8 @@ function OverviewTab() {
       if (sumRes.error || prodRes.error || statusRes.error) {
         setError('Could not load analytics. Please try again.');
       } else {
-        setSummary(sumRes.data as SalesSummary);
+        const summaryData = Array.isArray(sumRes.data) ? sumRes.data[0] : sumRes.data;
+        setSummary(summaryData as SalesSummary);
         setProductSales((prodRes.data as ProductSales[]) ?? []);
         setOrderStatus((statusRes.data as OrderStatusRow[]) ?? []);
       }

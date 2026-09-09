@@ -43,27 +43,6 @@ const testimonials = [
   },
 ];
 
-const bestSellers = [
-  {
-    name: 'Herbal Coffee Blend',
-    description: 'A rich, aromatic blend of handpicked herbs for daily wellness.',
-    price: '₱249.00',
-    icon: Coffee,
-  },
-  {
-    name: 'Rose Glow Handmade Soap',
-    description: 'Gentle botanical soap that cleanses and nourishes the skin.',
-    price: '₱129.00',
-    icon: Sparkles,
-  },
-  {
-    name: 'Botanical Skincare Set',
-    description: 'A curated trio of handmade skincare for a radiant complexion.',
-    price: '₱399.00',
-    icon: Leaf,
-  },
-];
-
 const promises = [
   {
     icon: Sprout,
@@ -372,71 +351,6 @@ export function HomePage() {
                   {pillar.description}
                 </p>
               </motion.div>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* Best Sellers */}
-      <Section spacing="lg" tone="default">
-        <Container>
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto max-w-2xl text-center"
-          >
-            <p className="mb-3 text-sm font-medium uppercase tracking-[0.2em] text-secondary">
-              Best Sellers
-            </p>
-            <h2 className="font-heading text-3xl font-semibold text-foreground sm:text-4xl text-balance">
-              Best Sellers
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-muted-foreground text-balance">
-              Our most loved handcrafted wellness products.
-            </p>
-          </motion.div>
-
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 sm:gap-8">
-            {bestSellers.map((product, i) => (
-              <motion.article
-                key={product.name}
-                custom={i}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: '-80px' }}
-                className="group flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-surface to-secondary/15">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-full bg-card/70 text-primary shadow-soft backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-                      <product.icon className="h-8 w-8" aria-hidden="true" />
-                    </span>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" aria-hidden="true" />
-                </div>
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="font-heading text-lg font-semibold text-foreground">
-                    {product.name}
-                  </h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {product.description}
-                  </p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="font-heading text-lg font-semibold text-primary">
-                      {product.price}
-                    </span>
-                    <Button asChild size="sm" className="rounded-full shadow-soft">
-                      <Link to="/products">
-                        Shop Now
-                        <ShoppingBag className="ml-2 h-3.5 w-3.5" aria-hidden="true" />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </motion.article>
             ))}
           </div>
         </Container>
