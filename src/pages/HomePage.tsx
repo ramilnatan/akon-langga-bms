@@ -17,8 +17,9 @@ import {
   Mail,
   MessageCircle,
 } from 'lucide-react';
-import type { Bundle } from '@/types';
+import type { Bundle, HeroSlide } from '@/types';
 import { supabase } from '@/services';
+import { Hero } from '@/components/Hero';
 import { Section } from '@/components/layout/Section';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/button';
@@ -114,10 +115,29 @@ const fadeUp = {
 
 export function HomePage() {
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [activeBundle, setActiveBundle] = useState<Bundle | null>(null);
   const { settings } = useStoreSettings();
 
   useEffect(() => {
+    async function fetchHeroSlides() {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('hero_slides')
+        .select('*')
+        .eq('published', true)
+        .eq('active', true)
+        .or(`start_date.is.null,start_date.lte.${today}`)
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching hero slides:', error);
+        return;
+      }
+      setHeroSlides(data || []);
+    }
+
     async function fetchCategories() {
       const { data, error } = await supabase
         .from('categories')
@@ -157,6 +177,7 @@ export function HomePage() {
       setActiveBundle(data);
     }
 
+    fetchHeroSlides();
     fetchCategories();
     fetchBundle();
   }, []);
@@ -185,85 +206,7 @@ export function HomePage() {
         </div>
 
         <Container>
-          <div className="relative grid items-center gap-12 py-20 sm:py-28 lg:grid-cols-2 lg:py-36">
-            {/* Left side */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
-            >
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card/80 px-4 py-1.5 text-sm font-medium text-primary shadow-soft backdrop-blur-sm">
-                <Leaf className="h-3.5 w-3.5" aria-hidden="true" />
-                Organic Wellness
-              </span>
-              <h1 className="mt-6 font-heading text-4xl font-semibold leading-tight text-foreground sm:text-5xl lg:text-6xl text-balance">
-                Nourish from Within,
-                <span className="block text-primary">Glow on the Outside.</span>
-              </h1>
-              <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground text-balance">
-                Discover handcrafted herbal coffee and natural handmade skincare created with care by {settings.store_name} to support everyday wellness.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild size="lg" className="rounded-full shadow-soft">
-                  <Link to="/products">
-                    Shop Now
-                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="rounded-full">
-                  <Link to="/about">Learn More</Link>
-                </Button>
-              </div>
-            </motion.div>
-
-            {/* Right side - image placeholder card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 }}
-              className="relative"
-              aria-hidden="true"
-            >
-              {/* Decorative outer shapes */}
-              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-2xl bg-secondary/30 blur-2xl" />
-              <div className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-primary/15 blur-2xl" />
-
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                className="relative aspect-square overflow-hidden rounded-[2rem] border border-border/60 bg-gradient-to-br from-primary/15 via-surface to-secondary/20 shadow-elevated backdrop-blur-sm"
-              >
-                {/* Inner glassmorphism ring */}
-                <div className="absolute inset-6 rounded-[1.5rem] border border-white/30 bg-card/30 backdrop-blur-md" />
-                {/* Center icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <motion.div
-                    animate={{ scale: [1, 1.05, 1], rotate: [0, 4, 0] }}
-                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                    className="flex h-28 w-28 items-center justify-center rounded-full bg-primary/10 shadow-soft"
-                  >
-                    <Leaf className="h-14 w-14 text-primary/60" />
-                  </motion.div>
-                </div>
-                {/* Floating accent dots */}
-                <motion.span
-                  animate={{ y: [0, -14, 0], opacity: [0.6, 1, 0.6] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute right-10 top-12 h-3 w-3 rounded-full bg-secondary/70"
-                />
-                <motion.span
-                  animate={{ y: [0, 12, 0], opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="absolute bottom-14 left-12 h-2.5 w-2.5 rounded-full bg-primary/60"
-                />
-                <motion.span
-                  animate={{ x: [0, 10, 0], opacity: [0.4, 0.9, 0.4] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                  className="absolute right-16 bottom-20 h-2 w-2 rounded-full bg-accent/70"
-                />
-              </motion.div>
-            </motion.div>
-          </div>
+          <Hero slides={heroSlides} />
         </Container>
       </section>
 
