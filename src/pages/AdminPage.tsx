@@ -1,3 +1,4 @@
+import { SettingsTab } from '@/components/admin/SettingsTab';
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -46,7 +47,7 @@ import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatus
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles';
+type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'settings';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-warning/15 text-warning',
@@ -123,6 +124,7 @@ export function AdminPage() {
               { id: 'products', label: 'Products', icon: Package },
               { id: 'categories', label: 'Categories', icon: Layers },
               { id: 'bundles', label: 'Bundles', icon: PackageOpen },
+              { id: 'settings', label: 'Settings', icon: DollarSign },
             ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map((t) => (
               <button
                 key={t.id}
@@ -144,6 +146,7 @@ export function AdminPage() {
           {tab === 'products' && <ProductsTab />}
           {tab === 'categories' && <CategoriesTab />}
           {tab === 'bundles' && <BundlesTab />}
+          {tab === 'settings' && <SettingsTab />}
         </div>
       </Container>
     </>
