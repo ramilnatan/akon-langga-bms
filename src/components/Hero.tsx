@@ -95,16 +95,27 @@ export function Hero({ slides }: HeroProps) {
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
           className="relative aspect-square overflow-hidden rounded-[2rem] border border-border/60 bg-gradient-to-br from-primary/15 via-surface to-secondary/20 shadow-elevated backdrop-blur-sm"
         >
-          <div className="absolute inset-6 rounded-[1.5rem] border border-white/30 bg-card/30 backdrop-blur-md" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <motion.div
-              animate={{ scale: [1, 1.05, 1], rotate: [0, 4, 0] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-              className="flex h-28 w-28 items-center justify-center rounded-full bg-primary/10 shadow-soft"
-            >
-              <Leaf className="h-14 w-14 text-primary/60" />
-            </motion.div>
-          </div>
+          {slide?.image_url ? (
+            <img
+              src={slide.image_url}
+              alt={slide.title || 'Hero image'}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <>
+              <div className="absolute inset-6 rounded-[1.5rem] border border-white/30 bg-card/30 backdrop-blur-md" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  animate={{ scale: [1, 1.05, 1], rotate: [0, 4, 0] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                  className="flex h-28 w-28 items-center justify-center rounded-full bg-primary/10 shadow-soft"
+                >
+                  <Leaf className="h-14 w-14 text-primary/60" />
+                </motion.div>
+              </div>
+            </>
+          )}
         </motion.div>
       </motion.div>
     </div>
