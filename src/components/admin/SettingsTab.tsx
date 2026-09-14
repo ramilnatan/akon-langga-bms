@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
+import { ImageUpload } from './ImageUpload';
 
 export function SettingsTab() {
   const { settings, refreshSettings } = useStoreSettings();
@@ -34,6 +35,10 @@ export function SettingsTab() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (name: string, url: string) => {
+    setFormData((prev) => ({ ...prev, [name]: url }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,14 +79,18 @@ export function SettingsTab() {
               <Label htmlFor="tagline">Tagline</Label>
               <Input id="tagline" name="tagline" value={formData.tagline} onChange={handleChange} />
             </div>
-            <div>
-              <Label htmlFor="logo_url">Logo URL</Label>
-              <Input id="logo_url" name="logo_url" value={formData.logo_url} onChange={handleChange} />
-            </div>
-            <div>
-              <Label htmlFor="favicon_url">Favicon URL</Label>
-              <Input id="favicon_url" name="favicon_url" value={formData.favicon_url} onChange={handleChange} />
-            </div>
+            <ImageUpload 
+              label="Store Logo" 
+              url={formData.logo_url} 
+              onUrlChange={(url) => handleImageChange('logo_url', url)} 
+              storagePath="store/logo" 
+            />
+            <ImageUpload 
+              label="Favicon" 
+              url={formData.favicon_url} 
+              onUrlChange={(url) => handleImageChange('favicon_url', url)} 
+              storagePath="store/favicon" 
+            />
           </div>
         </section>
 
@@ -156,8 +165,12 @@ export function SettingsTab() {
             <Input id="seo_keywords" name="seo_keywords" value={formData.seo_keywords} onChange={handleChange} />
           </div>
           <div className="lg:col-span-2">
-            <Label htmlFor="og_image_url">Open Graph Image URL</Label>
-            <Input id="og_image_url" name="og_image_url" value={formData.og_image_url} onChange={handleChange} />
+            <ImageUpload 
+              label="Open Graph Image" 
+              url={formData.og_image_url} 
+              onUrlChange={(url) => handleImageChange('og_image_url', url)} 
+              storagePath="store/og" 
+            />
           </div>
         </div>
       </section>

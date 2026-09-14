@@ -194,6 +194,12 @@ export function HomePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${settings.store_name} — ${settings.tagline}`} />
         <meta name="twitter:description" content={settings.seo_description || "An organic wellness brand offering herbal coffee, natural handmade skincare, and holistic self-care essentials."} />
+        {settings.og_image_url && (
+          <>
+            <meta property="og:image" content={settings.og_image_url} />
+            <meta name="twitter:image" content={settings.og_image_url} />
+          </>
+        )}
       </Helmet>
 
       {/* Hero Section */}

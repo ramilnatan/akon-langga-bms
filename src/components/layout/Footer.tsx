@@ -19,9 +19,13 @@ export function Footer() {
         <div className="grid gap-12 py-16 sm:py-20 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2.5" aria-label={`${settings.store_name} home`}>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Leaf className="h-5 w-5" aria-hidden="true" />
-              </span>
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt={settings.store_name} className="h-9 w-9 rounded-full object-cover" />
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Leaf className="h-5 w-5" aria-hidden="true" />
+                </span>
+              )}
               <span className="font-heading text-lg font-semibold text-foreground">
                 {settings.store_name}
               </span>

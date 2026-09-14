@@ -1,3 +1,5 @@
+import { Helmet } from 'react-helmet-async';
+import { useStoreSettings } from '@/context/StoreSettingsContext';
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/use-auth';
@@ -56,14 +58,29 @@ const router = createBrowserRouter([
   },
 ]);
 
+function SiteMetadata() {
+  const { settings } = useStoreSettings();
+
+  const faviconUrl = settings.favicon_url || '/favicon.svg';
+
+  return (
+    <Helmet>
+      <link rel="icon" href={faviconUrl} />
+    </Helmet>
+  );
+}
+
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <RouterProvider router={router} />
-        <Toaster />
-      </CartProvider>
-    </AuthProvider>
+    <>
+      <SiteMetadata />
+      <AuthProvider>
+        <CartProvider>
+          <RouterProvider router={router} />
+          <Toaster />
+        </CartProvider>
+      </AuthProvider>
+    </>
   );
 }
 
