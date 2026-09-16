@@ -1,3 +1,4 @@
+import { TestimonialSubmissionForm } from '@/components/testimonials/TestimonialSubmissionForm';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -17,7 +18,7 @@ import {
   Mail,
   MessageCircle,
 } from 'lucide-react';
-import type { Bundle, HeroSlide } from '@/types';
+import type { Bundle, HeroSlide, Testimonial } from '@/types';
 import { supabase } from '@/services';
 import { Hero } from '@/components/Hero';
 import { Section } from '@/components/layout/Section';
@@ -25,24 +26,6 @@ import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useStoreSettings } from '@/context/StoreSettingsContext';
-
-const testimonials = [
-  {
-    name: 'Maria Santos',
-    quote: 'The herbal coffee has become my morning ritual. I feel more balanced and energized every day.',
-    initials: 'MS',
-  },
-  {
-    name: 'Andrea Cruz',
-    quote: 'My skin has never looked better. The handmade soap is so gentle and smells wonderful.',
-    initials: 'AC',
-  },
-  {
-    name: 'Jasmine Reyes',
-    quote: 'You can feel the love and care in every product. AKON LANGGA is my go-to wellness brand.',
-    initials: 'JR',
-  },
-];
 
 const promises = [
   {
@@ -116,6 +99,8 @@ const fadeUp = {
 export function HomePage() {
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [isTestimonialFormOpen, setIsTestimonialFormOpen] = useState(false);
   const [activeBundle, setActiveBundle] = useState<Bundle | null>(null);
   const { settings } = useStoreSettings();
 
@@ -154,6 +139,21 @@ export function HomePage() {
       setDbCategories(data || []);
     }
 
+    async function fetchTestimonials() {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .eq('active', true)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching testimonials:', error);
+        return;
+      }
+
+      setTestimonials(data || []);
+    }
+
     async function fetchBundle() {
       const { data, error } = await supabase
         .from('bundles')
@@ -179,6 +179,7 @@ export function HomePage() {
 
     fetchHeroSlides();
     fetchCategories();
+    fetchTestimonials();
     fetchBundle();
   }, []);
 
@@ -484,41 +485,88 @@ export function HomePage() {
           </motion.div>
 
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 sm:gap-8">
-            {testimonials.map((testimonial, i) => (
-              <motion.article
-                key={testimonial.name}
-                custom={i}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: '-80px' }}
-                className="group flex flex-col rounded-3xl border border-border/60 bg-card/70 p-8 shadow-card backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-primary-foreground shadow-soft">
-                    {testimonial.initials}
-                  </span>
-                  <div>
-                    <p className="font-heading text-base font-semibold text-foreground">
-                      {testimonial.name}
-                    </p>
-                    <div className="mt-1 flex gap-0.5" aria-label="5 out of 5 stars">
-                      {Array.from({ length: 5 }).map((_, idx) => (
-                        <Star
-                          key={idx}
-                          className="h-3.5 w-3.5 fill-secondary text-secondary"
-                          aria-hidden="true"
-                        />
-                      ))}
+            {testimonials.map((testimonial, i) => {
+              const initials = testimonial.customer_name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
+
+              const rating = Math.max(0, Math.min(5, Math.round(testimonial.rating || 0)));
+
+              return (
+                <motion.article
+                  key={testimonial.id}
+                  custom={i}
+                  variants={fadeUp}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: '-80px' }}
+                  className="group flex flex-col rounded-3xl border border-border/60 bg-card/70 p-8 shadow-card backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated"
+                >
+                  <div className="flex items-center gap-4">
+                    {testimonial.photo_url ? (
+                      <img
+                        src={testimonial.photo_url}
+                        alt={testimonial.customer_name}
+                        className="h-12 w-12 shrink-0 rounded-full object-cover shadow-soft"
+                      />
+                    ) : (
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-primary-foreground shadow-soft">
+                        {initials}
+                      </span>
+                    )}
+                    <div>
+                      <p className="font-heading text-base font-semibold text-foreground">
+                        {testimonial.customer_name}
+                      </p>
+                      {rating > 0 && (
+                        <div className="mt-1 flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <Star
+                              key={idx}
+                              className={`h-3.5 w-3.5 ${
+                                idx < rating
+                                  ? 'fill-secondary text-secondary'
+                                  : 'fill-muted text-muted'
+                              }`}
+                              aria-hidden="true"
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-                <p className="mt-5 flex-1 text-sm leading-relaxed text-muted-foreground">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </p>
-              </motion.article>
-            ))}
+                  <p className="mt-5 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    &ldquo;{testimonial.comment}&rdquo;
+                  </p>
+                </motion.article>
+              );
+            })}
           </div>
+          <div className="mt-10 rounded-2xl border border-border bg-background/70 p-6 text-center sm:p-8">
+            <p className="font-heading text-xl font-semibold text-foreground">
+              Have you tried AKON LANGGA?
+            </p>
+
+            <p className="mt-2 text-muted-foreground">
+              We’d love to hear about your experience.
+            </p>
+
+            <Button
+              type="button"
+              className="mt-5"
+              onClick={() => setIsTestimonialFormOpen(true)}
+            >
+              Share Your Experience
+            </Button>
+          </div>
+
+          <TestimonialSubmissionForm
+            open={isTestimonialFormOpen}
+            onOpenChange={setIsTestimonialFormOpen}
+          />
         </Container>
       </Section>
 

@@ -1,5 +1,6 @@
 import { SettingsTab } from '@/components/admin/SettingsTab';
 import { HeroSlidesTab } from '@/components/admin/HeroSlidesTab';
+import { TestimonialsTab } from '@/components/admin/TestimonialsTab';
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -17,7 +18,9 @@ import {
   Lock,
   Layers,
   AlertTriangle,
+  MessageSquare,
 } from 'lucide-react';
+
 import { Container } from '@/components/layout/Container';
 import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -48,7 +51,8 @@ import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatus
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero' | 'settings';
+type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero' | 'testimonials' | 'settings';
+
 
 const statusColors: Record<string, string> = {
   pending: 'bg-warning/15 text-warning',
@@ -126,6 +130,7 @@ export function AdminPage() {
               { id: 'categories', label: 'Categories', icon: Layers },
               { id: 'bundles', label: 'Bundles', icon: PackageOpen },
               { id: 'hero', label: 'Hero Slides', icon: Layers },
+              { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
               { id: 'settings', label: 'Settings', icon: DollarSign },
             ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map((t) => (
               <button
@@ -149,6 +154,7 @@ export function AdminPage() {
           {tab === 'categories' && <CategoriesTab />}
           {tab === 'bundles' && <BundlesTab />}
           {tab === 'hero' && <HeroSlidesTab />}
+          {tab === 'testimonials' && <TestimonialsTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </Container>

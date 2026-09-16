@@ -1,5 +1,6 @@
 export * from './navigation';
 export * from './hero';
+export * from './testimonial';
 
 export interface Product {
   id: string;
@@ -161,4 +162,3 @@ export interface Category {
   created_at: string;
   updated_at: string;
 }
-
