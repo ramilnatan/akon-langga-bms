@@ -103,7 +103,6 @@ export interface Order {
   updated_at: string;
 }
 
-
 export interface OrderItem {
   id: string;
   order_id: string;
@@ -144,7 +143,6 @@ export interface Profile {
   updated_at: string;
 }
 
-
 export interface Category {
   id: string;
   name: string;
@@ -162,3 +160,5 @@ export interface Category {
   created_at: string;
   updated_at: string;
 }
+
+export * from './announcement';

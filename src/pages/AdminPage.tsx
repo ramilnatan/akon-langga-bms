@@ -1,5 +1,6 @@
 import { SettingsTab } from '@/components/admin/SettingsTab';
 import { HeroSlidesTab } from '@/components/admin/HeroSlidesTab';
+import { AnnouncementsTab } from '@/components/admin/AnnouncementsTab';
 import { TestimonialsTab } from '@/components/admin/TestimonialsTab';
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -18,6 +19,7 @@ import {
   Lock,
   Layers,
   AlertTriangle,
+  Megaphone,
   MessageSquare,
 } from 'lucide-react';
 
@@ -51,7 +53,7 @@ import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatus
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero' | 'testimonials' | 'settings';
+type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero'  | 'announcements' | 'testimonials' | 'settings';
 
 
 const statusColors: Record<string, string> = {
@@ -130,6 +132,7 @@ export function AdminPage() {
               { id: 'categories', label: 'Categories', icon: Layers },
               { id: 'bundles', label: 'Bundles', icon: PackageOpen },
               { id: 'hero', label: 'Hero Slides', icon: Layers },
+              { id: 'announcements', label: 'Announcements', icon: Megaphone },
               { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
               { id: 'settings', label: 'Settings', icon: DollarSign },
             ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map((t) => (
@@ -154,6 +157,7 @@ export function AdminPage() {
           {tab === 'categories' && <CategoriesTab />}
           {tab === 'bundles' && <BundlesTab />}
           {tab === 'hero' && <HeroSlidesTab />}
+          {tab === 'announcements' && <AnnouncementsTab />}
           {tab === 'testimonials' && <TestimonialsTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
