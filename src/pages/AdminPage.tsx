@@ -2,6 +2,7 @@ import { SettingsTab } from '@/components/admin/SettingsTab';
 import { HeroSlidesTab } from '@/components/admin/HeroSlidesTab';
 import { AnnouncementsTab } from '@/components/admin/AnnouncementsTab';
 import { TestimonialsTab } from '@/components/admin/TestimonialsTab';
+import { FaqsTab } from '@/components/admin/FaqsTab';
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -21,6 +22,7 @@ import {
   AlertTriangle,
   Megaphone,
   MessageSquare,
+  HelpCircle,
 } from 'lucide-react';
 
 import { Container } from '@/components/layout/Container';
@@ -53,7 +55,7 @@ import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatus
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero'  | 'announcements' | 'testimonials' | 'settings';
+type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero'  | 'announcements' | 'testimonials' | 'faqs' | 'settings';
 
 
 const statusColors: Record<string, string> = {
@@ -134,6 +136,7 @@ export function AdminPage() {
               { id: 'hero', label: 'Hero Slides', icon: Layers },
               { id: 'announcements', label: 'Announcements', icon: Megaphone },
               { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
+              { id: 'faqs', label: 'FAQs', icon: HelpCircle },
               { id: 'settings', label: 'Settings', icon: DollarSign },
             ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map((t) => (
               <button
@@ -159,6 +162,7 @@ export function AdminPage() {
           {tab === 'hero' && <HeroSlidesTab />}
           {tab === 'announcements' && <AnnouncementsTab />}
           {tab === 'testimonials' && <TestimonialsTab />}
+          {tab === 'faqs' && <FaqsTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </Container>
