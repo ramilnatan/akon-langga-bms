@@ -2,6 +2,7 @@ import { SettingsTab } from '@/components/admin/SettingsTab';
 import { HeroSlidesTab } from '@/components/admin/HeroSlidesTab';
 import { AnnouncementsTab } from '@/components/admin/AnnouncementsTab';
 import { TestimonialsTab } from '@/components/admin/TestimonialsTab';
+import { ContactMessagesTab } from '@/components/admin/ContactMessagesTab';
 import { FaqsTab } from '@/components/admin/FaqsTab';
 import { LabelsTab } from '@/components/admin/LabelsTab';
 import { useState, useEffect, useCallback } from 'react';
@@ -23,6 +24,7 @@ import {
   AlertTriangle,
   Megaphone,
   MessageSquare,
+  Mail,
   HelpCircle,
   Tag,
 } from 'lucide-react';
@@ -57,7 +59,7 @@ import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatus
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero'  | 'announcements' | 'testimonials' | 'faqs' | 'labels' | 'settings';
+type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero' | 'announcements' | 'testimonials' | 'contact-messages' | 'faqs' | 'labels' | 'settings';
 
 
 const statusColors: Record<string, string> = {
@@ -138,6 +140,7 @@ export function AdminPage() {
               { id: 'hero', label: 'Hero Slides', icon: Layers },
               { id: 'announcements', label: 'Announcements', icon: Megaphone },
               { id: 'testimonials', label: 'Testimonials', icon: MessageSquare },
+              { id: 'contact-messages', label: 'Contact Messages', icon: Mail },
               { id: 'faqs', label: 'FAQs', icon: HelpCircle },
               { id: 'labels', label: 'Labels', icon: Tag },
               { id: 'settings', label: 'Settings', icon: DollarSign },
@@ -165,6 +168,7 @@ export function AdminPage() {
           {tab === 'hero' && <HeroSlidesTab />}
           {tab === 'announcements' && <AnnouncementsTab />}
           {tab === 'testimonials' && <TestimonialsTab />}
+          {tab === 'contact-messages' && <ContactMessagesTab />}
           {tab === 'faqs' && <FaqsTab />}
           {tab === 'labels' && <LabelsTab />}
           {tab === 'settings' && <SettingsTab />}
