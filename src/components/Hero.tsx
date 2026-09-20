@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Leaf } from 'lucide-react';
+import Autoplay from 'embla-carousel-autoplay';
 import type { HeroSlide } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -126,7 +127,16 @@ export function Hero({ slides }: HeroProps) {
   }
 
   return (
-    <Carousel className="w-full">
+    <Carousel
+      className="w-full"
+      opts={{ loop: true }}
+      plugins={[
+        Autoplay({
+          delay: 5000,
+          stopOnInteraction: true,
+        }),
+      ]}
+    >
       <CarouselContent>
         {slides.map((slide) => (
           <CarouselItem key={slide.id}>{renderSlide(slide, false)}</CarouselItem>
