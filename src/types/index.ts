@@ -163,3 +163,4 @@ export interface Category {
 
 export * from './announcement';
 export * from './faq';
+export * from './label';
