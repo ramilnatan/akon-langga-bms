@@ -21,6 +21,7 @@ const AuthPage = lazy(() => import('@/pages/AuthPage').then((m) => ({ default: m
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })));
 const CheckoutPage = lazy(() => import('@/pages/CheckoutPage').then((m) => ({ default: m.CheckoutPage })));
 const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 
 function PageFallback() {
   return (
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
       { path: '/auth', element: withSuspense(<AuthPage />) },
       { path: '/reset-password', element: withSuspense(<ResetPasswordPage />) },
       { path: '/checkout', element: withSuspense(<CheckoutPage />) },
+      { path: '/profile', element: withSuspense(<ProfilePage />) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
