@@ -90,6 +90,12 @@ export function Navbar() {
                     Dashboard
                   </Link>
                 )}
+                <Link
+                  to="/profile"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+                >
+                  Profile
+                </Link>
                 <button
                   onClick={signOut}
                   className="rounded-full px-4 py-2 text-sm font-medium text-foreground/70 transition-colors hover:text-primary"
@@ -148,6 +154,17 @@ export function Navbar() {
                     </NavLink>
                   </li>
                 ))}
+                {user && (
+                  <li>
+                    <Link
+                      to="/profile"
+                      onClick={() => setOpen(false)}
+                      className="block rounded-lg px-4 py-3 text-base font-medium text-foreground/80 transition-colors hover:bg-primary/5 hover:text-primary"
+                    >
+                      Profile
+                    </Link>
+                  </li>
+                )}
                 <li>
                   {user ? (
                     <button
