@@ -10,6 +10,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  User,
 } from 'lucide-react';
 
 import { Container } from '@/components/layout/Container';
@@ -28,6 +29,7 @@ export function AuthPage() {
   const navigate = useNavigate();
 
   const [mode, setMode] = useState<AuthMode>('signin');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -102,6 +104,14 @@ export function AuthPage() {
         });
         return;
       }
+
+      if (!fullName.trim()) {
+        toast({
+          title: 'Full name is required',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     setLoading(true);
@@ -109,7 +119,7 @@ export function AuthPage() {
     const result =
       mode === 'signin'
         ? await signIn(email.trim(), password)
-        : await signUp(email.trim(), password);
+        : await signUp(fullName.trim(), email.trim(), password);
 
     setLoading(false);
 
@@ -139,6 +149,7 @@ export function AuthPage() {
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode);
     setResetSent(false);
+    setFullName('');
     setPassword('');
     setConfirmPassword('');
   };
@@ -234,6 +245,32 @@ export function AuthPage() {
                 onSubmit={handleSubmit}
                 className="mt-8 space-y-5"
               >
+                {mode === 'signup' && (
+                  <div>
+                    <Label htmlFor="fullName">Full Name</Label>
+
+                    <div className="relative mt-1.5">
+                      <User
+                        className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+
+                      <Input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) =>
+                          setFullName(e.target.value)
+                        }
+                        required={mode === 'signup'}
+                        placeholder="Enter your full name"
+                        className="pl-10"
+                        autoComplete="name"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <Label htmlFor="email">Email</Label>
 
