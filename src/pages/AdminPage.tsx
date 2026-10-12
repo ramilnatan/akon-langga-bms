@@ -5,6 +5,7 @@ import { TestimonialsTab } from '@/components/admin/TestimonialsTab';
 import { ContactMessagesTab } from '@/components/admin/ContactMessagesTab';
 import { FaqsTab } from '@/components/admin/FaqsTab';
 import { LabelsTab } from '@/components/admin/LabelsTab';
+import { AccountsTab } from '@/components/admin/AccountsTab';
 import { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -21,18 +22,19 @@ import {
   LogOut,
   Lock,
   Layers,
-  AlertTriangle,
   Megaphone,
   MessageSquare,
   Mail,
   HelpCircle,
   Tag,
+  Users,
 } from 'lucide-react';
 
 import { Container } from '@/components/layout/Container';
 import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { Button } from '@/components/ui/button';
+
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -59,8 +61,7 @@ import type { Product, Order, OrderItem, SalesSummary, ProductSales, OrderStatus
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price);
 
-type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero' | 'announcements' | 'testimonials' | 'contact-messages' | 'faqs' | 'labels' | 'settings';
-
+type Tab = 'overview' | 'orders' | 'products' | 'categories' | 'bundles' | 'hero' | 'announcements' | 'testimonials' | 'contact-messages' | 'faqs' | 'labels' | 'accounts' | 'settings';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-warning/15 text-warning',
@@ -143,6 +144,7 @@ export function AdminPage() {
               { id: 'contact-messages', label: 'Contact Messages', icon: Mail },
               { id: 'faqs', label: 'FAQs', icon: HelpCircle },
               { id: 'labels', label: 'Labels', icon: Tag },
+              { id: 'accounts', label: 'Accounts', icon: Users },
               { id: 'settings', label: 'Settings', icon: DollarSign },
             ] as { id: Tab; label: string; icon: typeof LayoutDashboard }[]).map((t) => (
               <button
@@ -171,6 +173,7 @@ export function AdminPage() {
           {tab === 'contact-messages' && <ContactMessagesTab />}
           {tab === 'faqs' && <FaqsTab />}
           {tab === 'labels' && <LabelsTab />}
+          {tab === 'accounts' && <AccountsTab />}
           {tab === 'settings' && <SettingsTab />}
         </div>
       </Container>
